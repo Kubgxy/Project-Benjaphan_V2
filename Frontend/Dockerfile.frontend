@@ -3,7 +3,8 @@ FROM node:18-alpine AS deps
 WORKDIR /app
 RUN corepack enable && corepack prepare yarn@4.5.2 --activate
 COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --production
+RUN yarn install --frozen-lockfile --production || { echo "Yarn install failed"; exit 1; }
+RUN test -d node_modules || { echo "node_modules not created"; exit 1; }
 
 FROM node:18-alpine AS builder
 WORKDIR /app
