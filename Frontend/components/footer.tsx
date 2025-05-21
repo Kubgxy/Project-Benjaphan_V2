@@ -40,7 +40,7 @@ export function Footer() {
             </p>
             <div className="flex space-x-4 mt-6">
               <a
-                href="#"
+                href="https://www.facebook.com/benchaphan5TH"
                 className="w-10 h-10 rounded-full bg-gold-600 text-white flex items-center justify-center hover:bg-gold-700 transition-colors"
               >
                 <Facebook className="h-5 w-5" />
