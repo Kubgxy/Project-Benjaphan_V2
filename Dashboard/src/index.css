@@ -1,0 +1,145 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;              /* light gray */
+    --foreground: 222 47% 11%;           /* slate-900 */
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 221 83% 53%;              /* blue-600 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 221 100% 96%;           /* blue-50 */
+    --secondary-foreground: 221 83% 53%;
+
+    --muted: 220 14% 96%;                /* gray-100 */
+    --muted-foreground: 220 8% 46%;      /* gray-500 */
+
+    --accent: 165 67% 44%;               /* emerald-500 */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;               /* gray-200 */
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
+
+    --radius: 0.5rem;
+
+    --row-highlight: 221 100% 96%;
+
+    /* Sidebar modern look */
+    --sidebar-background: 221 100% 96%;      /* blue-50 */
+    --sidebar-foreground: 222 47% 11%;       /* slate-900 */
+    --sidebar-primary: 221 83% 53%;          /* blue-600 */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 165 67% 44%;           /* emerald-500 */
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 221 83% 53%;
+  }
+
+  .dark {
+    --background: 222 47% 11%;              /* slate-900 */
+    --foreground: 0 0% 100%;
+
+    --card: 224 71% 4%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 224 71% 4%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 221 83% 66%;                 /* blue-400 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 32% 17%;               /* blue-950 */
+    --secondary-foreground: 221 83% 53%;
+
+    --muted: 215 16% 22%;                   /* gray-800 */
+    --muted-foreground: 220 8% 60%;         /* gray-400 */
+
+    --accent: 162 73% 47%;                  /* emerald-400 */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 19% 35%;                  /* gray-700 */
+    --input: 215 19% 35%;
+    --ring: 221 83% 66%;
+
+    --row-highlight: 215 16% 22%;
+
+    --sidebar-background: 222 47% 11%;      /* slate-900 */
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 221 83% 66%;         /* blue-400 */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 162 73% 47%;          /* emerald-400 */
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 215 19% 35%;
+    --sidebar-ring: 221 83% 66%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    @apply font-sarabun;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  .skeleton {
+    @apply animate-pulse-light bg-muted rounded-md;
+  }
+}
+
+@layer components {
+  .dashboard-card {
+    @apply flex flex-col bg-card p-5 rounded-lg border shadow-sm hover:shadow-md transition-shadow;
+  }
+  
+  .status-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  
+  .status-badge-success {
+    @apply status-badge bg-emerald/10 text-emerald-dark;
+  }
+  
+  .status-badge-warning {
+    @apply status-badge bg-gold/10 text-gold-dark;
+  }
+  
+  .status-badge-error {
+    @apply status-badge bg-ruby/10 text-ruby-dark;
+  }
+  
+  .status-badge-info {
+    @apply status-badge bg-purple/10 text-purple-dark;
+  }
+  
+  .sidebar-item {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent;
+  }
+  
+  .sidebar-item-active {
+    @apply bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90;
+  }
+}

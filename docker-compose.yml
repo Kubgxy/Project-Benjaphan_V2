@@ -1,0 +1,131 @@
+services:
+  # ========================
+  # FRONTEND (Next.js)
+  # ========================
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: benjaphan-frontend:latest
+    restart: always
+    networks:
+      - benjaphan-network
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - benjaphan-deploy_yarn_cache:/app/.yarn/cache
+
+  # ========================
+  # DASHBOARD (React + Vite)
+  # ========================
+  dashboard:
+    build:
+      context: ./Dashboard
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: benjaphan-dashboard:latest
+    restart: always
+    networks:
+      - benjaphan-network
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    container_name: dashboard
+    ports:
+      - "5174:5174"
+    volumes:
+      - benjaphan-deploy_yarn_cache:/app/.yarn/cache
+
+  # ========================
+  # BACKEND (Express + TypeScript)
+  # ========================
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: benjaphan-backend:latest
+    restart: always
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=${PORT}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FACEBOOK_CLIENT_ID=${FACEBOOK_CLIENT_ID}
+      - FACEBOOK_CLIENT_SECRET=${FACEBOOK_CLIENT_SECRET}
+      - NODE_ENV=production
+    depends_on:
+      - mongo
+    networks:
+      - benjaphan-network
+    container_name: backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - benjaphan-deploy_yarn_cache:/app/.yarn/cache
+      - backend_uploads:/app/uploads
+
+  # ========================
+  # MONGO DATABASE
+  # ========================
+  mongo:
+    image: mongo:6
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: benjaphan5
+    volumes:
+      - mongo-data:/data/db
+      - ./dump:/dump
+    ports:
+      - "3001:27017"
+    networks:
+      - benjaphan-network
+    container_name: mongo
+
+  # ========================
+  # nginx
+  # ========================
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/cert/origin.pem:/etc/nginx/cert/origin.pem:ro
+      - ./nginx/cert/private.key:/etc/nginx/cert/private.key:ro
+    depends_on:
+      - frontend
+      - dashboard
+      - backend
+    networks:
+      - benjaphan-network
+
+# ========================
+# VOLUME
+# ========================
+volumes:
+  mongo-data:
+  backend_uploads:
+  benjaphan-deploy_yarn_cache:
+    external: true
+
+# ========================
+# NETWORK
+# ========================
+networks:
+  benjaphan-network:
+    driver: bridge

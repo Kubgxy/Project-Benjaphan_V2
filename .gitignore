@@ -1,0 +1,36 @@
+# ⛔️ Node.js (frontend, backend, dashboard)
+**/node_modules/
+**/.next/
+**/dist/
+**/build/
+**/.turbo/
+**/.vite/
+
+# ⛔️ Dependency lockfiles (ถ้าใช้ yarn.lock / package-lock.json แยก)
+**/yarn-error.log
+**/pnpm-lock.yaml
+**/npm-debug.log
+
+# 🧪 Testing / coverage
+**/coverage/
+**/.nyc_output/
+
+# 💾 Sensitive or local-only files
+.env
+.env.local
+.env.*.local
+
+# 🔐 SSL certificate (ถ้าไม่อยาก push)
+
+# 📦 Mongo dump & backup
+dump/
+backup.ps1
+*.bak
+*.tar.gz
+
+# 🔄 VSCode or IDE
+.vscode/
+.idea/
+.DS_Store
+
+*.log
