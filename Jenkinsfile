@@ -22,15 +22,15 @@ pipeline {
                     string(credentialsId: 'FACEBOOK_CLIENT_SECRET', variable: 'FACEBOOK_CLIENT_SECRET')
                 ]) {
                     sh '''
-                        echo "MONGODB_URI=$MONGODB_URI" > backend/.env
-                        echo "JWT_SECRET=$JWT_SECRET" >> backend/.env
-                        echo "PORT=$PORT" >> backend/.env
-                        echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> backend/.env
-                        echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> backend/.env
-                        echo "FACEBOOK_CLIENT_ID=$FACEBOOK_CLIENT_ID" >> backend/.env
-                        echo "FACEBOOK_CLIENT_SECRET=$FACEBOOK_CLIENT_SECRET" >> backend/.env
+                        echo "MONGODB_URI=$MONGODB_URI" > Backend/.env
+                        echo "JWT_SECRET=$JWT_SECRET" >> Backend/.env
+                        echo "PORT=$PORT" >> Backend/.env
+                        echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> Backend/.env
+                        echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> Backend/.env
+                        echo "FACEBOOK_CLIENT_ID=$FACEBOOK_CLIENT_ID" >> Backend/.env
+                        echo "FACEBOOK_CLIENT_SECRET=$FACEBOOK_CLIENT_SECRET" >> Backend/.env
                     '''
-                    echo '🔒 Secrets loaded into backend/.env'
+                    echo '🔒 Secrets loaded into Backend/.env'
                 }
             }
         }
@@ -71,7 +71,7 @@ pipeline {
             sh 'docker-compose -f $DOCKER_COMPOSE_FILE logs'
         }
         always {
-            sh 'rm -f backend/.env'
+            sh 'rm -f Backend/.env'
             echo '📝 Pipeline finished'
         }
     }
