@@ -29,6 +29,7 @@ pipeline {
                         echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> Backend/.env
                         echo "FACEBOOK_CLIENT_ID=$FACEBOOK_CLIENT_ID" >> Backend/.env
                         echo "FACEBOOK_CLIENT_SECRET=$FACEBOOK_CLIENT_SECRET" >> Backend/.env
+                        export MONGODB_URI JWT_SECRET PORT GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET FACEBOOK_CLIENT_ID FACEBOOK_CLIENT_SECRET
                     '''
                     echo '🔒 Secrets loaded into Backend/.env'
                 }
@@ -71,7 +72,6 @@ pipeline {
             sh 'docker-compose -f $DOCKER_COMPOSE_FILE logs'
         }
         always {
-            sh 'rm -f Backend/.env'
             echo '📝 Pipeline finished'
         }
     }

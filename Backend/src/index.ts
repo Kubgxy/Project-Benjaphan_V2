@@ -12,11 +12,7 @@ import { IncomingMessage } from 'http';
 dotenv.config();
 
 const app = express();
-<<<<<<< HEAD
 const port = parseInt(process.env.PORT || '3000', 10);
-=======
-const port = parseInt(process.env.PORT ?? '3000');
->>>>>>> 7e1d03ac56040977d6839ef64987c881db07c79c
 const mongoURI = process.env.MONGODB_URI as string;
 
 // Middleware

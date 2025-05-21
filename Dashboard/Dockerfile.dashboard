@@ -1,22 +1,25 @@
 # Build stage
-FROM node:18-alpine AS deps
+FROM node:20-alpine AS deps
 WORKDIR /app
-RUN corepack enable && corepack prepare yarn@4.5.2 --activate
-COPY package.json yarn.lock ./
+RUN apk add --no-cache python3 make g++ && corepack enable && corepack prepare yarn@4.5.2 --activate
+COPY package.json yarn.lock .yarnrc.yml ./
 RUN yarn install --frozen-lockfile --production || { echo "Yarn install failed"; exit 1; }
 RUN test -d node_modules || { echo "node_modules not created"; exit 1; }
 
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
+RUN apk add --no-cache python3 make g++ && corepack enable && corepack prepare yarn@4.5.2 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN yarn build
 
 # Production stage
-FROM node:18-alpine
+FROM node:20-alpine
 WORKDIR /app
-RUN corepack enable && corepack prepare yarn@4.5.2 --activate
+RUN apk add --no-cache python3 make g++ && corepack enable && corepack prepare yarn@4.5.2 --activate
 RUN yarn global add serve
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/.yarnrc.yml ./.yarnrc.yml
+RUN yarn install --frozen-lockfile --production
 EXPOSE 5174
 CMD ["serve", "-s", "dist", "-l", "5174"]

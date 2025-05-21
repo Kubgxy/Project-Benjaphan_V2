@@ -33,14 +33,8 @@ services:
       dockerfile: Dockerfile.backend
     ports:
       - "3000:3000"
-    environment:
-      - MONGODB_URI=${MONGODB_URI}
-      - JWT_SECRET=${JWT_SECRET}
-      - PORT=${PORT}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - FACEBOOK_CLIENT_ID=${FACEBOOK_CLIENT_ID}
-      - FACEBOOK_CLIENT_SECRET=${FACEBOOK_CLIENT_SECRET}
+    env_file:
+      - Backend/.env
     depends_on:
       mongo:
         condition: service_healthy
