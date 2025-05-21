@@ -36,8 +36,7 @@ services:
     env_file:
       - Backend/.env
     depends_on:
-      mongo:
-        condition: service_healthy
+      - mongo
     networks:
       - app-network
     restart: unless-stopped
@@ -62,11 +61,6 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: benjaphan5
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     container_name: mongo
 
   nginx:
