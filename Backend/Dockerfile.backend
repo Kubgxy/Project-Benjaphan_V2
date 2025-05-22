@@ -25,7 +25,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # ✅ สร้างโฟลเดอร์ uploads/products เพื่อให้ container มี path นี้แน่นอน
-RUN mkdir -p uploads/products
+RUN mkdir -p uploads/products uploads/articles uploads/avatars uploads/pages uploads/slips
 
 RUN yarn build
 
@@ -45,7 +45,7 @@ COPY --from=builder /app/yarn.lock ./yarn.lock
 COPY --from=builder /app/.yarnrc.yml ./.yarnrc.yml
 
 # ✅ สร้าง path รองรับ uploads (อีกทีเพื่อความชัวร์)
-RUN mkdir -p uploads/products
+RUN mkdir -p uploads/products uploads/articles uploads/avatars uploads/pages uploads/slips
 
 RUN yarn install --frozen-lockfile
 
