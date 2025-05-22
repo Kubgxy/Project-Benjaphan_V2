@@ -4,15 +4,29 @@ pipeline {
         DOCKER_COMPOSE_FILE = 'docker-compose.yml'
     }
     stages {
+        stage('🧹 Clean') {
+            steps {
+                cleanWs()
+            }
+        }
         stage('🔍 Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/Kubgxy/Project-Benjaphan_V2.git'
                 echo '📥 Pulled latest code from repository'
             }
         }
-        stage('🧪 Confirm images exist') {
+        stage('📦 Confirm all upload folders') {
             steps {
-                sh 'ls -al Backend/uploads/products || echo "❌ No product images found!"'
+                sh '''
+                echo "✅ Checking all upload folders..."
+                for dir in products articles avatars pages slips; do
+                    if [ -d Backend/uploads/$dir ]; then
+                    echo "📁 Found: $dir"
+                    else
+                    echo "❌ Missing: $dir"
+                    fi
+                done
+                '''
             }
         }
         stage('🔐 Load Secrets') {
