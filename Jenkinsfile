@@ -10,6 +10,11 @@ pipeline {
                 echo '📥 Pulled latest code from repository'
             }
         }
+        stage('🧪 Confirm images exist') {
+            steps {
+                sh 'ls -al Backend/uploads/products || echo "❌ No product images found!"'
+            }
+        }
         stage('🔐 Load Secrets') {
             steps {
                 withCredentials([
@@ -43,8 +48,10 @@ pipeline {
         }
         stage('🐳 Docker Build') {
             steps {
-                sh 'docker-compose -f $DOCKER_COMPOSE_FILE build --parallel'
-                echo '🏗️ Built Docker images'
+                dir("${env.WORKSPACE}") {
+                    sh 'docker-compose -f $DOCKER_COMPOSE_FILE build --parallel'
+                    echo '🏗️ Built Docker images'
+                }
             }
         }
         stage('🚀 Docker Up') {
@@ -59,7 +66,7 @@ pipeline {
                 echo "🧼 Cleaning unused Docker resources..."
                 docker image prune -f --filter "until=24h" || true
                 docker builder prune -f || true
-                docker volume prune -f || true
+                docker volume ls -qf dangling=true | xargs -r docker volume rm || true
                 '''
                 echo '🧽 Cleaned up unused Docker resources'
             }
