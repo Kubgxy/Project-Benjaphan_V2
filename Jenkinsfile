@@ -56,10 +56,12 @@ pipeline {
         stage('🧹 Docker Cleanup') {
             steps {
                 sh '''
-                    docker image prune -f --filter "until=24h" || true
-                    docker builder prune -f || true
+                echo "🧼 Cleaning unused Docker resources..."
+                docker image prune -f --filter "until=24h" || true
+                docker builder prune -f || true
+                docker volume prune -f || true
                 '''
-                echo '🧼 Cleaned up unused Docker resources'
+                echo '🧽 Cleaned up unused Docker resources'
             }
         }
     }
