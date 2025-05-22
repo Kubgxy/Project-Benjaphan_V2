@@ -1,9 +1,22 @@
 pipeline {
     agent any
+
+    options {
+        skipDefaultCheckout() // ไม่ checkout อัตโนมัติ
+        timeout(time: 30, unit: 'MINUTES') // Timeout 30 นาที
+    }
+
     environment {
         DOCKER_COMPOSE_FILE = 'docker-compose.yml'
     }
+
     stages {
+        stage('🔄 Clean Workspace') {
+            steps {
+                cleanWs()
+                echo "🧹 Cleaned Workspace"
+            }
+        }
         stage('🔍 Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/Kubgxy/Project-Benjaphan_V2.git'
