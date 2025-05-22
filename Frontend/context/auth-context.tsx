@@ -38,6 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           method: "GET",
           credentials: "include", // ✅ ใช้ cookie-based auth
         });
+
+        if (res.status === 401) {
+          return;
+        }
   
         if (!res.ok) {
           throw new Error("Not authenticated");
@@ -45,11 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
         const data = await res.json();
         setUser(data.user); // <-- จาก backend ส่ง req.user กลับมา
-      } catch (error: any) {
-        if (error.response?.status === 401) {
-          return;
-        }
-
+      } catch (error) {
         console.error("Error checking authentication:", error);
         setUser(null); // ถ้า token หมดอายุ หรือไม่มี cookie
       } finally {

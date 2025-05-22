@@ -1,28 +1,54 @@
-# Build stage
+# ========================
+# Build dependencies
+# ========================
 FROM node:20-alpine AS deps
 WORKDIR /app
-# Install build tools for bcrypt
-RUN apk add --no-cache python3 make g++ && corepack enable && corepack prepare yarn@4.5.2 --activate
+
+# ติดตั้ง build tools (สำหรับ bcrypt, node-gyp ฯลฯ)
+RUN apk add --no-cache python3 make g++ && \
+    corepack enable && corepack prepare yarn@4.5.2 --activate
+
 COPY package.json yarn.lock .yarnrc.yml ./
 RUN yarn install --frozen-lockfile || { echo "Yarn install failed"; exit 1; }
 RUN test -d node_modules || { echo "node_modules not created"; exit 1; }
 
+# ========================
+# Build stage
+# ========================
 FROM node:20-alpine AS builder
 WORKDIR /app
-RUN apk add --no-cache python3 make g++ && corepack enable && corepack prepare yarn@4.5.2 --activate
+
+RUN apk add --no-cache python3 make g++ && \
+    corepack enable && corepack prepare yarn@4.5.2 --activate
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# ✅ สร้างโฟลเดอร์ uploads/products เพื่อให้ container มี path นี้แน่นอน
+RUN mkdir -p uploads/products
+
 RUN yarn build
 
-# Production stage
+# ========================
+# Production image
+# ========================
 FROM node:20-alpine
 WORKDIR /app
-# Install build tools for production (in case needed)
-RUN apk add --no-cache python3 make g++ && corepack enable && corepack prepare yarn@4.5.2 --activate
+
+RUN apk add --no-cache python3 make g++ && \
+    corepack enable && corepack prepare yarn@4.5.2 --activate
+
+# ✅ Copy dist และ configs
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/yarn.lock ./yarn.lock
 COPY --from=builder /app/.yarnrc.yml ./.yarnrc.yml
+
+# ✅ สร้าง path รองรับ uploads (อีกทีเพื่อความชัวร์)
+RUN mkdir -p uploads/products
+
 RUN yarn install --frozen-lockfile
+
 EXPOSE 3000
+
 CMD ["yarn", "start"]

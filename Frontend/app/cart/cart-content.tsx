@@ -60,8 +60,8 @@ export function CartContent() {
       );
       setCartItems(response.data.cart.items);
       setIsLoggedIn(true);
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
+    } catch (error: any) {
+      if (error.response?.status === 401) {
         // ยังไม่ได้ Login
         setIsLoggedIn(false);
         return;

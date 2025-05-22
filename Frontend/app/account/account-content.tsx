@@ -130,13 +130,11 @@ export function AccountContent() {
         method: "GET",
         credentials: "include",
       });
+      if (res.status === 401) return;
       if (!res.ok) return console.error("Failed to fetch user profile");
       const data = await res.json();
       setUser(data.user);
-    } catch (error: any) {
-        if (error.response?.status === 401) {
-          return;
-        }
+    } catch (error) {
       console.error("Error fetching user profile:", error);
     }
   };
@@ -181,20 +179,27 @@ export function AccountContent() {
     }
   }, [activeTab]);
 
+
   const fetchWishlist = async () => {
     try {
       const res = await fetch(`${getBaseUrl()}/api/wishlist/getWishlist`, {
         credentials: "include",
       });
+
+      if (res.status === 401) return; // ✅ กันไว้ก่อนเลย
+
+      if (!res.ok) {
+        throw new Error(`Request failed with status ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (data.success || data.wishlist) {
         const flatWishlist =
           data.wishlist?.products
-            ?.filter((item: any) => item.productId !== null) // 🛠 กรอง null
+            ?.filter((item: any) => item.productId !== null)
             .map((item: any) => ({
               ...item.productId,
-              // ✅ populate result
               id_product: item.productId?.id_product,
               size: item.size,
               quantity: item.quantity,
@@ -202,14 +207,8 @@ export function AccountContent() {
 
         setWishlist(flatWishlist);
       }
-    } catch (error: any) {
-      if (error.response?.status === 401) {
-        // ยังไม่ได้ login → ไม่ตั้งค่าอะไร
-        return;
-      }
-
-      // error อื่น ๆ ให้ log
-      console.error("Failed to fetch wishlist:", error);
+    } catch (error) {
+      console.error("❌ Failed to fetch wishlist (non-401):", error);
     }
   };
 
@@ -302,12 +301,10 @@ export function AccountContent() {
       const res = await fetch(`${getBaseUrl()}/api/user/getAddress`, {
         credentials: "include",
       });
+      if (res.status === 401) return;
       const data = await res.json();
       setAddresses(data.addresses);
-    } catch (error: any) {
-      if (error.response?.status === 401) {
-        return;
-      }
+    } catch (error) {
       console.error("Failed to fetch addresses:", error);
     }
   };
