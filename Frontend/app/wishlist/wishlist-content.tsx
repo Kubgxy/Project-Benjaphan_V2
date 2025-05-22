@@ -37,22 +37,14 @@ export function WishlistContent() {
         }
       );
       const products = response.data.wishlist?.products || [];
-      console.log("Fetched wishlist items:", products);
       setWishlistItems(products);
       setIsLoggedIn(true);
-    } catch (error) {
-      console.error("❌ Error fetching wishlist:", error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        // ไม่ได้ Login
-        setIsLoggedIn(false);
-      } else {
-        toast({
-          title: "เกิดข้อผิดพลาด",
-          description: "โหลดข้อมูลรายการโปรดไม่สำเร็จ",
-          variant: "destructive",
-          duration: 3000,
-        });
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        return;
       }
+
+      console.error("Error fetching wishlist:", error);
     } finally {
       setLoading(false);
     }
@@ -104,7 +96,6 @@ export function WishlistContent() {
       );
       toast({ title: "💔 ลบออกจากรายการโปรดแล้ว", duration: 3000 });
       fetchWishlist();
-      console.log("sending to remove:", productId);
     } catch (error) {
       console.error("❌ Error removing wishlist item:", error);
       toast({

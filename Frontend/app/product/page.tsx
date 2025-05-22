@@ -59,7 +59,6 @@ export default function ProductsPage() {
           }
         );
         const data = await response.json();
-        console.log("Fetched products:", data.products); // Debugging line
         if (response.ok) {
           setProducts(data.products);
         } else {

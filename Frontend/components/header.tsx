@@ -32,7 +32,6 @@ export function Header() {
           `${getBaseUrl()}/api/product/getAllProducts`
         ); // ← ดึงข้อมูลจริง
         setProducts(res.data.products);
-        console.log("Fetched products:", res.data);
       } catch (err) {
         console.error("Failed to fetch products", err);
       } finally {

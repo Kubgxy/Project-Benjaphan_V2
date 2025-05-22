@@ -45,7 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
         const data = await res.json();
         setUser(data.user); // <-- จาก backend ส่ง req.user กลับมา
-      } catch (error) {
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          return;
+        }
+
+        console.error("Error checking authentication:", error);
         setUser(null); // ถ้า token หมดอายุ หรือไม่มี cookie
       } finally {
         setIsLoading(false);
@@ -92,7 +97,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
   
       const data = await res.json();
-      console.log("✅ Profile updated:", data);
   
       // 🟢 Refresh context ด้วย user ใหม่ที่ได้จาก backend
       setUser(data.user); 

@@ -27,7 +27,6 @@ export default function ContactPage() {
           withCredentials: true,
         });
         if (res.data?.user) {
-          console.log("✅ Profile Data:", res.data.user);
           setIsLoggedIn(true);
           setFormData((prev) => ({
             ...prev,
@@ -38,8 +37,11 @@ export default function ContactPage() {
             phone: res.data.user.phoneNumber || "",
           }));
         }
-      } catch (err) {
-        console.log("🔻 ไม่ได้ล็อกอิน");
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          return;
+        }
+        console.error("Error fetching user data:", error);
         setIsLoggedIn(false);
       }
     };

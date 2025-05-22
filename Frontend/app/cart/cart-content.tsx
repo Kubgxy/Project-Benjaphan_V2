@@ -61,11 +61,12 @@ export function CartContent() {
       setCartItems(response.data.cart.items);
       setIsLoggedIn(true);
     } catch (error) {
-      console.error("❌ Failed to fetch cart:", error);
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         // ยังไม่ได้ Login
         setIsLoggedIn(false);
+        return;
       }
+      console.error("❌ Failed to fetch cart:", error);
     } finally {
       setLoading(false);
     }

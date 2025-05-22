@@ -344,7 +344,6 @@ export function ProductDetail({ id }: Props) {
                       { withCredentials: true }
                     );
 
-                    console.log("✅ Login success! Reloading now...");
 
                     toast({
                       title: "✅ เข้าสู่ระบบสำเร็จ!",

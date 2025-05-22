@@ -89,8 +89,11 @@ export function CheckoutForm() {
           });
         }
       })
-      .catch((err) => {
-        console.error("❌ Failed to load addresses:", err);
+      .catch((error: any) => {
+        if (error.response?.status === 401) {
+          return;
+        }
+        console.error("❌ Failed to load addresses:", error);
       });
   }, []);
 

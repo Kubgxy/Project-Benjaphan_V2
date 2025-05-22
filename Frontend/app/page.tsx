@@ -62,8 +62,11 @@ export default function Home() {
         const res = await axios.get(`${getBaseUrl()}/api/setting/getHomepage`);
         const data = res.data.homepage;
         setBannerContent(data);
-      } catch (err) {
-        console.error("Failed to fetch homepage content", err);
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          return;
+        }
+        console.error("Failed to fetch homepage content", error);
       }
     };
 

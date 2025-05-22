@@ -133,7 +133,10 @@ export function AccountContent() {
       if (!res.ok) return console.error("Failed to fetch user profile");
       const data = await res.json();
       setUser(data.user);
-    } catch (error) {
+    } catch (error: any) {
+        if (error.response?.status === 401) {
+          return;
+        }
       console.error("Error fetching user profile:", error);
     }
   };
@@ -184,7 +187,6 @@ export function AccountContent() {
         credentials: "include",
       });
       const data = await res.json();
-      console.log("✅ wishlist response", data);
 
       if (data.success || data.wishlist) {
         const flatWishlist =
@@ -198,10 +200,15 @@ export function AccountContent() {
               quantity: item.quantity,
             })) || [];
 
-        console.log("✅ cleaned wishlist:", flatWishlist);
         setWishlist(flatWishlist);
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        // ยังไม่ได้ login → ไม่ตั้งค่าอะไร
+        return;
+      }
+
+      // error อื่น ๆ ให้ log
       console.error("Failed to fetch wishlist:", error);
     }
   };
@@ -291,11 +298,18 @@ export function AccountContent() {
   };
 
   const fetchAddresses = async () => {
-    const res = await fetch(`${getBaseUrl()}/api/user/getAddress`, {
-      credentials: "include",
-    });
-    const data = await res.json();
-    setAddresses(data.addresses);
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/user/getAddress`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      setAddresses(data.addresses);
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        return;
+      }
+      console.error("Failed to fetch addresses:", error);
+    }
   };
 
   useEffect(() => {

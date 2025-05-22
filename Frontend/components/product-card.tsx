@@ -102,14 +102,22 @@ export function ProductCard({ product, featured = false }: ProductCardProps) {
         `${getBaseUrl()}/api/wishlist/getWishlist`,
         { withCredentials: true }
       );
+
       const wishlistItems = response.data.wishlist?.products || [];
-      const exists = wishlistItems.some(
-        (item: any) =>
-          (item.productId && item.productId === product._id) || // ถ้าเป็น plain ObjectId
-          (item.productId && item.productId._id === product._id) // ถ้า populate มาเป็น object
+      const exists = wishlistItems.some((item: any) =>
+        (item.productId && item.productId === product._id) || 
+        (item.productId?._id && item.productId._id === product._id)
       );
+
       setIsInWishlist(exists);
-    } catch (error) {
+
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        // ยังไม่ได้ login → ไม่ตั้งค่าอะไร
+        return;
+      }
+
+      // error อื่น ๆ ให้ log
       console.error("Error checking wishlist:", error);
     }
   };
@@ -136,7 +144,6 @@ export function ProductCard({ product, featured = false }: ProductCardProps) {
         );
         setIsInWishlist(true); // ✅ อัปเดตทันทีใน memory
         toast({ title: "❤️ เพิ่มลงในรายการโปรดแล้ว" });
-        console.log("ส่งไปเพิ่ม wishlist:", product._id);
       }
       // ไม่ต้องเรียก checkWishlistStatus() ซ้ำที่นี่
     } catch (error) {
