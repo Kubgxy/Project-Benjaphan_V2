@@ -21,9 +21,9 @@ pipeline {
     stage('🔍 Git Clone') {
       steps {
         echo '📥 Cloning repo...'
-        git branch: 'main', url: 'https://github.com/Kubgxy/Project-Benjaphan_V2.git'
+        checkout scm
         sh 'ls -al Backend/uploads || echo "❌ uploads not found"'
-      }
+        }
     }
 
     stage('📁 Debug path') {
