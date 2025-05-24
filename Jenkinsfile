@@ -14,10 +14,7 @@ pipeline {
     stage('💣 Clean Workspace') {
       steps {
         echo '🧼 Manually cleaning workspace...'
-        sh '''
-          rm -rf ${WORKSPACE:?}/*
-          rm -rf ${WORKSPACE:?}/.* || true
-        '''
+        deleteDir()
       }
     }
 
@@ -29,10 +26,24 @@ pipeline {
       }
     }
 
-    stage('📁 Debug workspace path') {
+    stage('📁 Debug path') {
         steps {
-            sh 'echo "Current workspace path: $WORKSPACE"'
-            sh 'ls -al $WORKSPACE'
+            sh '''
+            echo "WORKSPACE = $WORKSPACE"
+            pwd
+            ls -al
+            '''
+        }
+    }
+
+    stage('🛰️ Check workspace path') {
+        steps {
+            sh '''
+            echo "👉 Jenkins is running in workspace:"
+            pwd
+            echo "🔍 Listing:"
+            ls -al
+            '''
         }
     }
 
