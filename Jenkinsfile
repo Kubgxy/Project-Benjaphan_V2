@@ -11,19 +11,19 @@ pipeline {
   }
 
   stages {
-    stage('💣 Clean Workspace') {
-      steps {
-        echo '🧼 Manually cleaning workspace...'
-        deleteDir()
-      }
-    }
-
     stage('🔍 Git Clone') {
       steps {
         echo '📥 Cloning repo...'
         checkout scm
         sh 'ls -al Backend/uploads || echo "❌ uploads not found"'
         }
+    }
+    
+    stage('💣 Clean Workspace') {
+      steps {
+        echo '🧼 Manually cleaning workspace...'
+        deleteDir()
+      }
     }
 
     stage('📁 Debug path') {
