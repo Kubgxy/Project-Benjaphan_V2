@@ -110,15 +110,6 @@ pipeline {
       }
     }
 
-    stage('📂 Debug uploads volume') {
-      steps {
-        sh '''
-          echo '📸 ตรวจสอบภาพใน uploads-data volume:'
-          docker exec backend ls -al /app/uploads/products || echo "❌ ไม่มีภาพสินค้าใน container"
-        '''
-      }
-    }
-
     stage('🧹 Docker Cleanup') {
       steps {
         sh '''
