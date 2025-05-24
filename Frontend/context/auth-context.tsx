@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { getBaseUrl } from "@/lib/api";
+import axios from "axios";
 
 export interface User {
   id: string
@@ -34,26 +35,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch(`${getBaseUrl()}/api/user/me`, {
-          method: "GET",
-          credentials: "include", // ✅ ใช้ cookie-based auth
-        });
+      const res = await axios.get(`${getBaseUrl()}/api/user/me`, {
+        withCredentials: true, // ✅ ใช้ cookie-based auth
+      });
 
-        if (res.status === 401) {
-          return;
-        }
-  
-        if (!res.ok) {
-          throw new Error("Not authenticated");
-        }
-  
-        const data = await res.json();
-        setUser(data.user); // <-- จาก backend ส่ง req.user กลับมา
-      } catch (error) {
+      setUser(res.data.user); // <-- จาก backend ส่ง req.user กลับมา
+      } catch (error: any) {
+      if (error.response && error.response.status === 401) {
+        // ไม่ต้อง throw error ถ้าไม่ได้ auth
+      } else {
         console.error("Error checking authentication:", error);
-        setUser(null); // ถ้า token หมดอายุ หรือไม่มี cookie
+      }
+      setUser(null); // ถ้า token หมดอายุ หรือไม่มี cookie
       } finally {
-        setIsLoading(false);
+      setIsLoading(false);
       }
     };
   

@@ -62,8 +62,6 @@ export function CartContent() {
       setIsLoggedIn(true);
     } catch (error: any) {
       if (error.response?.status === 401) {
-        // ยังไม่ได้ Login
-        setIsLoggedIn(false);
         return;
       }
       console.error("❌ Failed to fetch cart:", error);

@@ -73,7 +73,10 @@ export function ProductDetail({ id }: Props) {
           withCredentials: true,
         });
         setIsLoggedIn(true);
-      } catch {
+      } catch(error:any) {
+        if (error.response?.status === 401) {
+          return;
+        }
         setIsLoggedIn(false);
       }
     };
