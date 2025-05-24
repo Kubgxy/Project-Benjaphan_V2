@@ -64,7 +64,7 @@ pipeline {
         stage('🐳 Docker Build') {
             steps {
                 dir("${env.WORKSPACE}") {
-                    sh 'docker-compose -f $DOCKER_COMPOSE_FILE build --parallel --no-cache'
+                    sh 'docker-compose -f $DOCKER_COMPOSE_FILE build --parallel'
                     echo '🏗️ Built Docker images'
                 }
             }
