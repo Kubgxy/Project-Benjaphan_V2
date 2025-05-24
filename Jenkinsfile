@@ -15,48 +15,6 @@ pipeline {
       steps {
         echo '📥 Cloning repo...'
         checkout scm
-        sh 'ls -al Backend/uploads || echo "❌ uploads not found"'
-        }
-    }
-
-    stage('📁 Debug path') {
-        steps {
-            sh '''
-            echo "WORKSPACE = $WORKSPACE"
-            pwd
-            ls -al
-            '''
-        }
-    }
-
-    stage('🛰️ Check workspace path') {
-        steps {
-            sh '''
-            echo "👉 Jenkins is running in workspace:"
-            pwd
-            echo "🔍 Listing:"
-            ls -al
-            '''
-        }
-    }
-
-    stage('🧪 Validate uploads/') {
-      steps {
-        sh '''
-          echo '📁 ตรวจสอบรูปที่อยู่ใน repo:'
-          find Backend/uploads -type f || echo "❌ uploads มีแค่โฟลเดอร์เปล่า"
-          ls -al Backend/uploads/products || echo "❌ ไม่มี products!"
-          ls -al Backend/uploads/slips || echo "❌ ไม่มี slips!"
-        '''
-      }
-    }
-
-    stage('📂 Debug uploads volume') {
-        steps {
-            sh '''
-            echo 📸 ตรวจสอบภาพใน uploads-data volume:
-            docker exec backend ls -al /app/uploads/products || echo "❌ ไม่พบไฟล์ใน /app/uploads/products"
-            '''
         }
     }
 
@@ -123,15 +81,33 @@ pipeline {
   }
 
   post {
+    always {
+      echo '📋 Pipeline finished'
+
+      script {
+        def now = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        def isSuccess = currentBuild.result == 'null' || currentBuild.result == 'SUCCESS'
+        def message = isSuccess ?
+          """ { "content": "======================================\\n✅ Deployment completed successfully 🚀🎉\\📦 โปรเจค: Benjaphan5\\n⏰ เวลา: ${now}\\n======================================" } """ :
+          """ { "content": "======================================\\n❌ Deployment failed. Check logs for details 🔥🧨\\n📦 โปรเจค: Benjaphan5\\n⏰ เวลา: ${now}\\n======================================" } """
+        def file = isSuccess ? 'discord-success.json' : 'discord-failure.json'
+        writeFile file: file, text: message
+
+        // ดึง webhook จาก Jenkins Credentials
+        withCredentials([string(credentialsId: 'Discord_WEBHOOK', variable: 'DISCORD_WEBHOOK')]) {
+          sh """
+            curl -X POST -H "Content-Type: application/json" -d @${file} ^
+            \$DISCORD_WEBHOOK
+          """
+        }
+      }
+    }
     success {
       echo '✅ Deployment completed successfully 🎉'
     }
     failure {
       echo '❌ Deployment failed. Check logs for details.'
       sh 'docker-compose -f $DOCKER_COMPOSE_FILE logs || true'
-    }
-    always {
-      echo '📋 Pipeline finished'
     }
   }
 }
