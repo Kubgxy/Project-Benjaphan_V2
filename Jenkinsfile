@@ -18,13 +18,6 @@ pipeline {
         sh 'ls -al Backend/uploads || echo "❌ uploads not found"'
         }
     }
-    
-    stage('💣 Clean Workspace') {
-      steps {
-        echo '🧼 Manually cleaning workspace...'
-        deleteDir()
-      }
-    }
 
     stage('📁 Debug path') {
         steps {
