@@ -1,5 +1,5 @@
 # ========================
-# Build dependencies
+# Build dependencies stage
 # ========================
 FROM node:20-alpine AS deps
 WORKDIR /app
@@ -9,7 +9,7 @@ RUN apk add --no-cache python3 make g++ && \
     corepack enable && corepack prepare yarn@4.5.2 --activate
 
 COPY package.json yarn.lock .yarnrc.yml ./
-RUN yarn install --frozen-lockfile || { echo "Yarn install failed"; exit 1; }
+RUN yarn install --frozen-lockfile
 RUN test -d node_modules || { echo "node_modules not created"; exit 1; }
 
 # ========================
@@ -22,15 +22,18 @@ RUN apk add --no-cache python3 make g++ && \
     corepack enable && corepack prepare yarn@4.5.2 --activate
 
 COPY --from=deps /app/node_modules ./node_modules
+
+# ✅ Copy รูปตั้งต้นไปไว้ที่ uploads-backup (เพื่อให้ไม่โดน volume ทับ)
+COPY ./uploads /app/uploads-backup
+
+# ✅ Copy source code ทั้งหมด
 COPY . .
 
-# ✅ สร้างโฟลเดอร์ uploads/products เพื่อให้ container มี path นี้แน่นอน
-RUN mkdir -p uploads/products uploads/articles uploads/avatars uploads/pages uploads/slips
-
+# ✅ Build source
 RUN yarn build
 
 # ========================
-# Production image
+# Production Image
 # ========================
 FROM node:20-alpine
 WORKDIR /app
@@ -38,17 +41,18 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++ && \
     corepack enable && corepack prepare yarn@4.5.2 --activate
 
-# ✅ Copy dist และ configs
+# ✅ Copy ผลลัพธ์จาก builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/yarn.lock ./yarn.lock
 COPY --from=builder /app/.yarnrc.yml ./.yarnrc.yml
+COPY --from=builder /app/uploads-backup ./uploads-backup
 
-# ✅ สร้าง path รองรับ uploads (อีกทีเพื่อความชัวร์)
-RUN mkdir -p uploads/products uploads/articles uploads/avatars uploads/pages uploads/slips
-
+# ✅ Install production dependencies
 RUN yarn install --frozen-lockfile
 
+# ✅ เปิด port
 EXPOSE 3000
 
+# ✅ Run backend
 CMD ["yarn", "start"]

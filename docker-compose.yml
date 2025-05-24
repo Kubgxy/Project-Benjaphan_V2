@@ -39,7 +39,7 @@ services:
       - app-network
     restart: unless-stopped
     volumes:
-      - ./Backend/uploads:/app/uploads
+      - uploads-data:/app/uploads
     container_name: backend
 
   mongo:
@@ -65,7 +65,7 @@ services:
       - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ../nginx/cert/origin.pem:/etc/nginx/cert/origin.pem:ro
       - ../nginx/cert/private.key:/etc/nginx/cert/private.key:ro
-      - ./Backend/uploads:/app/uploads
+      - uploads-data:/app/uploads
     depends_on:
       - frontend
       - dashboard
@@ -77,6 +77,7 @@ services:
 
 volumes:
   mongo-data:
+  uploads-data:
 
 networks:
   app-network:

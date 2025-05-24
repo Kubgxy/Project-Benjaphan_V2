@@ -11,30 +11,20 @@ pipeline {
     }
 
     stages {
-        stage('🔄 Clean Workspace') {
+        stage('💣 Force Clean Workspace') {
             steps {
-                cleanWs()
-                echo "🧹 Cleaned Workspace"
+                sh '''
+                echo "🧨 Manual clean workspace (แทน cleanWs)"
+                rm -rf ${WORKSPACE:?}/*
+                rm -rf ${WORKSPACE:?}/.* || true
+                '''
             }
         }
         stage('🔍 Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/Kubgxy/Project-Benjaphan_V2.git'
                 echo '📥 Pulled latest code from repository'
-            }
-        }
-        stage('📦 Confirm all upload folders') {
-            steps {
-                sh '''
-                echo "✅ Checking all upload folders..."
-                for dir in products articles avatars pages slips; do
-                    if [ -d Backend/uploads/$dir ]; then
-                    echo "📁 Found: $dir"
-                    else
-                    echo "❌ Missing: $dir"
-                    fi
-                done
-                '''
+                sh 'ls -al Backend/uploads || echo "❌ uploads folder not found"'
             }
         }
         stage('🔐 Load Secrets') {
@@ -71,7 +61,7 @@ pipeline {
         stage('🐳 Docker Build') {
             steps {
                 dir("${env.WORKSPACE}") {
-                    sh 'docker-compose -f $DOCKER_COMPOSE_FILE build --parallel'
+                    sh 'docker-compose -f $DOCKER_COMPOSE_FILE build --parallel --no-cache'
                     echo '🏗️ Built Docker images'
                 }
             }
