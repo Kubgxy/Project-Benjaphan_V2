@@ -13,11 +13,8 @@ pipeline {
     stages {
         stage('💣 Force Clean Workspace') {
             steps {
-                sh '''
-                echo "🧨 Manual clean workspace (แทน cleanWs)"
-                rm -rf ${WORKSPACE:?}/*
-                rm -rf ${WORKSPACE:?}/.* || true
-                '''
+                sh 'rm -rf ${WORKSPACE:?}/*'
+                echo '🧼 Workspace cleaned'
             }
         }
         stage('🔍 Checkout') {
@@ -25,6 +22,12 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/Kubgxy/Project-Benjaphan_V2.git'
                 echo '📥 Pulled latest code from repository'
                 sh 'ls -al Backend/uploads || echo "❌ uploads folder not found"'
+            }
+        }
+        stage('🕵️ ตรวจสอบไฟล์ที่ได้') {
+            steps {
+                sh 'find Backend/uploads -type f || echo "❌ uploads มีแค่โฟลเดอร์เปล่า"'
+                sh 'ls -al Backend/uploads/products || echo "❌ products ไม่เจอ!"'
             }
         }
         stage('🔐 Load Secrets') {
