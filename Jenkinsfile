@@ -51,6 +51,15 @@ pipeline {
       }
     }
 
+    stage('📂 Debug uploads volume') {
+        steps {
+            sh '''
+            echo 📸 ตรวจสอบภาพใน uploads-data volume:
+            docker exec backend ls -al /app/uploads/products || echo "❌ ไม่พบไฟล์ใน /app/uploads/products"
+            '''
+        }
+    }
+
     stage('🔐 Load Secrets') {
       steps {
         withCredentials([

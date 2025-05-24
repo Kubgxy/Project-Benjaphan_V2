@@ -20,11 +20,10 @@ const mongoURI = process.env.MONGODB_URI as string;
 // ========================================================
 const volumePath = path.join(__dirname, '../uploads');            // ที่ mount volume จริง
 const backupPath = path.join(__dirname, '../uploads-backup');    // ที่อยู่ใน image
-const checkFolder = path.join(volumePath, 'products');
-const isFolderEmpty = fs.existsSync(checkFolder) && fs.readdirSync(checkFolder).length === 0;
+const checkFolder = path.join(volumePath, 'products');           // จะเช็คแค่โฟลเดอร์เดียวพอ
 
-if (!fs.existsSync(checkFolder) || isFolderEmpty) {
-  console.log('📦 uploads/ ยังไม่มีข้อมูลหรือว่างเปล่า → Copy รูปตั้งต้นจาก uploads-backup...');
+if (!fs.existsSync(checkFolder)) {
+  console.log('📦 uploads/ ยังไม่มีข้อมูล → Copy รูปตั้งต้นจาก uploads-backup...');
   try {
     fs.cpSync(backupPath, volumePath, { recursive: true });
     console.log('✅ Copy รูปสินค้าตั้งต้นสำเร็จแล้ว');
