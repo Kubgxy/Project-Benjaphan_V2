@@ -34,7 +34,6 @@ dist
 out
 build
 public/build
-uploads/
 
 !.yarn/cache
 !.yarn/releases
