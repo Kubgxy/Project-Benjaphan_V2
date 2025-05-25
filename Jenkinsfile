@@ -96,7 +96,7 @@ pipeline {
         // ดึง webhook จาก Jenkins Credentials
         withCredentials([string(credentialsId: 'Discord_WEBHOOK', variable: 'DISCORD_WEBHOOK')]) {
           sh """
-            curl -X POST -H "Content-Type: application/json" -d @${file} ${DISCORD_WEBHOOK}
+            curl -X POST -H "Content-Type: application/json" -d @$file $DISCORD_WEBHOOK
           """
         }
       }
