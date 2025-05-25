@@ -88,8 +88,8 @@ pipeline {
         def now = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         def isSuccess = currentBuild.result == 'null' || currentBuild.result == 'SUCCESS'
         def message = isSuccess ?
-          '{ "content": "======================================\n✅ Deployment completed successfully 🚀🎉\n📦 โปรเจค: Benjaphan5\n⏰ เวลา: ' + now + '\n======================================" }' :
-          '{ "content": "======================================\n❌ Deployment failed. Check logs for details 🔥🧨\n📦 โปรเจค: Benjaphan5\n⏰ เวลา: ' + now + '\n======================================" }'
+          '{ "content": "======================================\\n✅ Deployment completed successfully 🚀🎉\\n📦 โปรเจค: Benjaphan5\\n⏰ เวลา: ' + now + '\\n======================================" }' :
+          '{ "content": "======================================\\n❌ Deployment failed. Check logs for details 🔥🧨\\n📦 โปรเจค: Benjaphan5\\n⏰ เวลา: ' + now + '\\n======================================" }'
         def file = isSuccess ? 'discord-success.json' : 'discord-failure.json'
         writeFile file: file, text: message
 
