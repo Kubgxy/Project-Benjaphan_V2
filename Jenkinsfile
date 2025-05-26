@@ -85,7 +85,7 @@ pipeline {
       echo '📋 Pipeline finished'
 
       script {
-        def now = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        def now = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"), utc = TimeZone.getTimeZone('UTC+07:00')
         def isSuccess = currentBuild.result == 'null' || currentBuild.result == 'SUCCESS'
         def message = isSuccess ?
           '{ "content": "======================================\\n✅ Deployment completed successfully 🚀🎉\\n📦 โปรเจค: Benjaphan5\\n⏰ เวลา: ' + now + '\\n======================================" }' :

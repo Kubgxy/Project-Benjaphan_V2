@@ -61,13 +61,7 @@ export function LoginForm() {
         description: "ยินดีต้อนรับกลับมา!",
         variant: "default",
       });
-  
-      if (role === "customer") {
-        window.location.href = "http://benjaphan5.com/";
-      } else if (role === "admin") {
-        window.location.href = "http://admin-dashboard.benjaphan5.com/";
-      } else {
-      }
+
     } catch (err) {
       showError("กรุณาลองอีกครั้ง!");
     } finally {
