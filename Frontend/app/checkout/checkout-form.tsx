@@ -14,6 +14,7 @@ import {
   Banknote,
   X,
   QrCode,
+  Save,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { getBaseUrl } from "@/lib/api";
@@ -35,7 +36,6 @@ export function CheckoutForm() {
 
   const [slipFile, setSlipFile] = useState<File | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "qr">("online");
-  // ✅ แก้ชื่อ field ให้ตรง backend 100%
   const [shippingInfo, setShippingInfo] = useState({
     Name: "",
     label: "",
@@ -47,32 +47,30 @@ export function CheckoutForm() {
     phone: "",
   });
 
-  // โหลด checkout summary
+  // โหลดข้อมูล
   useEffect(() => {
-    axios
-      .get(`${getBaseUrl()}/api/order/checkoutSummary`, {
-        withCredentials: true,
-      })
-      .then((res) => {
+    const fetchCheckoutSummary = async () => {
+      try {
+        const res = await axios.get(`${getBaseUrl()}/api/order/checkoutSummary`, {
+          withCredentials: true,
+        });
         setCheckoutItems(res.data.items);
         setSubtotal(res.data.subtotal);
         setShipping(res.data.shipping);
         setTotal(res.data.total);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("❌ Failed to load checkout summary:", err);
         router.push("/cart");
-      })
-      .finally(() => setLoading(false));
-  }, [router]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // โหลด address list
-  useEffect(() => {
-    axios
-      .get(`${getBaseUrl()}/api/user/getAddress`, {
-        withCredentials: true,
-      })
-      .then((res) => {
+    const fetchAddressList = async () => {
+      try {
+        const res = await axios.get(`${getBaseUrl()}/api/user/getAddress`, {
+          withCredentials: true,
+        });
         setAddressList(res.data.addresses || []);
         if (res.data.addresses.length > 0) {
           const defaultAddr = res.data.addresses[0];
@@ -88,122 +86,53 @@ export function CheckoutForm() {
             phone: defaultAddr.phone,
           });
         }
-      })
-      .catch((error: any) => {
+      } catch (error: any) {
         if (error.response?.status === 401) {
           return;
         }
         console.error("❌ Failed to load addresses:", error);
-      });
-  }, []);
+      }
+    };
 
-  const handleSaveShipping = () => {
-    if (selectedAddressId) {
-      axios
-        .patch(
+    fetchCheckoutSummary();
+    fetchAddressList();
+  }, [router]);
+
+  const handleSaveShipping = async () => {
+    try {
+      if (selectedAddressId) {
+        await axios.patch(
           `${getBaseUrl()}/api/user/updateAddress/${selectedAddressId}`,
-          {
-            Name: shippingInfo.Name,
-            label: shippingInfo.label,
-            addressLine: shippingInfo.addressLine,
-            city: shippingInfo.city,
-            province: shippingInfo.province,
-            postalCode: shippingInfo.postalCode,
-            country: shippingInfo.country,
-            phone: shippingInfo.phone,
-          },
+          shippingInfo,
           { withCredentials: true }
-        )
-        .then(() => {
-          toast({
-            title: "✅ แก้ไขที่อยู่เรียบร้อยแล้ว",
-            description: "กรุณาเลือกที่อยู่เพื่อทำการสั่งซื้อ",
-            duration: 3000,
-          });
-          window.location.reload();
-        })
-        .catch(() =>
-          toast({
-            title: "❌ แก้ไขที่อยู่ล้มเหลว",
-            description: "กรุณาลองใหม่อีกครั้ง",
-            duration: 3000,
-          })
         );
-    } else {
-      axios
-        .post(
+        toast({
+          title: "✅ แก้ไขที่อยู่เรียบร้อยแล้ว",
+          description: "กรุณาเลือกที่อยู่เพื่อทำการสั่งซื้อ",
+          duration: 3000,
+        });
+      } else {
+        await axios.post(
           `${getBaseUrl()}/api/user/addAddress`,
-          {
-            Name: shippingInfo.Name,
-            label: shippingInfo.label,
-            addressLine: shippingInfo.addressLine,
-            city: shippingInfo.city,
-            province: shippingInfo.province,
-            postalCode: shippingInfo.postalCode,
-            country: shippingInfo.country,
-            phone: shippingInfo.phone,
-          },
+          shippingInfo,
           { withCredentials: true }
-        )
-        .then(() => {
-          toast({
-            title: "✅ เพิ่มที่อยู่เรียบร้อยแล้ว",
-            description: "กรุณาเลือกที่อยู่เพื่อทำการสั่งซื้อ",
-            duration: 3000,
-          });
-          window.location.reload();
-        })
-        .catch(() => alert("❌ เพิ่มที่อยู่ล้มเหลว"));
+        );
+        toast({
+          title: "✅ เพิ่มที่อยู่เรียบร้อยแล้ว",
+          description: "กรุณาเลือกที่อยู่เพื่อทำการสั่งซื้อ",
+          duration: 3000,
+        });
+      }
+      modalRef.current?.close();
+      window.location.reload();
+    } catch {
+      toast({
+        title: "❌ เกิดข้อผิดพลาด",
+        description: "ไม่สามารถบันทึกที่อยู่ได้",
+        duration: 3000,
+      });
     }
-    modalRef.current?.close();
   };
-
-  // const handlePlaceOrder = async () => {
-  //   setIsSubmitting(true);
-  //   setError(null);
-
-  //   try {
-  //     const formattedItems = checkoutItems.map((item) => ({
-  //       productId: item.productId || item._id || item.id_product,
-  //       name: item.name,
-  //       size: item.size,
-  //       quantity: item.quantity,
-  //       priceAtPurchase: item.priceAtAdded, // mapping ตรงนี้สำคัญ!
-  //       images: item.images || [],
-  //     }));
-
-  //     const orderData = {
-  //       items: formattedItems,
-  //       subtotal,
-  //       shipping,
-  //       total,
-  //       shippingInfo: {
-  //         Name: shippingInfo.Name, // ✅
-  //         label: shippingInfo.label,
-  //         addressLine: shippingInfo.addressLine, // ✅
-  //         city: shippingInfo.city,
-  //         province: shippingInfo.province, // ✅
-  //         postalCode: shippingInfo.postalCode, // ✅
-  //         country: shippingInfo.country,
-  //         phone: shippingInfo.phone,
-  //       },
-  //       paymentMethod,
-  //     };
-
-  //     const result = await createOrder(orderData);
-
-  //     if (result.success) {
-  //       router.push(`/payment?orderId=${result.orderId}`);
-  //     } else {
-  //       setError(result.error || "เกิดข้อผิดพลาด กรุณาลองใหม่");
-  //       setIsSubmitting(false);
-  //     }
-  //   } catch (err) {
-  //     console.error("Error placing order:", err);
-  //     setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
-  //     setIsSubmitting(false);
-  //   }
-  // };
 
   const handleConfirmPayment = async () => {
     if (paymentMethod === "online" && !slipFile) {
@@ -227,22 +156,12 @@ export function CheckoutForm() {
         images: item.images || [],
       }));
 
-      // 👉 1️⃣ สร้าง Order ก่อน
       const orderRes = await createOrder({
         items: formattedItems,
         subtotal,
         shipping,
         total,
-        shippingInfo: {
-          Name: shippingInfo.Name,
-          label: shippingInfo.label,
-          addressLine: shippingInfo.addressLine,
-          city: shippingInfo.city,
-          province: shippingInfo.province,
-          postalCode: shippingInfo.postalCode,
-          country: shippingInfo.country,
-          phone: shippingInfo.phone,
-        },
+        shippingInfo,
         paymentMethod,
       });
 
@@ -257,7 +176,6 @@ export function CheckoutForm() {
 
       const orderId = orderRes.orderId;
 
-      // 👉 2️⃣ อัปโหลดสลิปถ้าเป็นการโอน
       if (paymentMethod === "online" && slipFile) {
         const formData = new FormData();
         formData.append("slip", slipFile);
@@ -306,99 +224,56 @@ export function CheckoutForm() {
       {/* MODAL เพิ่ม/แก้ไขที่อยู่ */}
       <dialog
         ref={modalRef}
-        className="rounded-lg p-6 w-full max-w-3xl z-50 bg-white shadow-lg"
+        className="rounded-lg p-6 w-full max-w-3xl z-50 bg-white shadow-xl mt-10"
       >
         <button
-          className="absolute top-5 right-5 text-gray-500 hover:text-red-500"
+          className="absolute top-4 right-4 text-gray-500 hover:text-red-500"
           onClick={() => modalRef.current?.close()}
         >
           <X className="w-6 h-6" />
         </button>
-        <h2 className="flex gap-2 text-lg font-semibold mb-4 text-brown-800">
+        <h2 className="flex items-center gap-2 text-xl font-semibold mb-6 text-brown-800">
           <MapPinHouse className="w-6 h-6 text-yellow-500" />
           {selectedAddressId ? "แก้ไขที่อยู่" : "เพิ่มที่อยู่ใหม่"}
         </h2>
 
-        <div className="space-y-3">
-          <input
-            type="text"
-            placeholder="ชือผู้รับ"
-            value={shippingInfo.Name}
-            onChange={(e) =>
-              setShippingInfo({ ...shippingInfo, Name: e.target.value })
-            }
-            className="w-full border rounded px-3 py-2"
-          />
-          <input
-            type="tel"
-            placeholder="เบอร์ติดต่อ"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={10}
-            value={shippingInfo.phone}
-            onChange={(e) => {
-              const onlyNumbers = e.target.value
-                .replace(/\D/g, "")
-                .slice(0, 10);
-              setShippingInfo({ ...shippingInfo, phone: onlyNumbers });
-            }}
-            className="w-full border rounded px-3 py-2"
-          />
-
-          <input
-            type="text"
-            placeholder="สถานที่ บ้าน / บริษัท / โรงงาน "
-            value={shippingInfo.label}
-            onChange={(e) =>
-              setShippingInfo({ ...shippingInfo, label: e.target.value })
-            }
-            className="w-full border rounded px-3 py-2"
-          />
-          <input
-            type="text"
-            placeholder="ที่อยู่"
-            value={shippingInfo.addressLine}
-            onChange={(e) =>
-              setShippingInfo({ ...shippingInfo, addressLine: e.target.value })
-            }
-            className="w-full border rounded px-3 py-2"
-          />
-          <input
-            type="text"
-            placeholder="เขต/อำเภอ"
-            value={shippingInfo.city}
-            onChange={(e) =>
-              setShippingInfo({ ...shippingInfo, city: e.target.value })
-            }
-            className="w-full border rounded px-3 py-2"
-          />
-          <input
-            type="text"
-            placeholder="จังหวัด"
-            value={shippingInfo.province}
-            onChange={(e) =>
-              setShippingInfo({ ...shippingInfo, province: e.target.value })
-            }
-            className="w-full border rounded px-3 py-2"
-          />
-          <input
-            type="number"
-            placeholder="รหัสไปรษณีย์"
-            value={shippingInfo.postalCode}
-            onChange={(e) =>
-              setShippingInfo({ ...shippingInfo, postalCode: e.target.value })
-            }
-            className="w-full border rounded px-3 py-2"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { label: "ชื่อผู้รับ", value: shippingInfo.Name, key: "Name" },
+            { label: "เบอร์ติดต่อ", value: shippingInfo.phone, key: "phone", type: "tel", maxLength: 10 },
+            { label: "สถานที่ (บ้าน / บริษัท / โรงงาน)", value: shippingInfo.label, key: "label" },
+            { label: "ที่อยู่", value: shippingInfo.addressLine, key: "addressLine" },
+            { label: "เขต / อำเภอ", value: shippingInfo.city, key: "city" },
+            { label: "จังหวัด", value: shippingInfo.province, key: "province" },
+            { label: "รหัสไปรษณีย์", value: shippingInfo.postalCode, key: "postalCode", type: "number" },
+          ].map(({ label, value, key, type = "text", maxLength }) => (
+            <div key={key} className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-1">{label}</label>
+              <input
+                type={type}
+                maxLength={maxLength}
+                value={value}
+                onChange={(e) =>
+                  setShippingInfo({
+                    ...shippingInfo,
+                    [key]: key === "phone" ? e.target.value.replace(/\D/g, "").slice(0, 10) : e.target.value,
+                  })
+                }
+                className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
+              />
+            </div>
+          ))}
         </div>
 
         <button
           onClick={handleSaveShipping}
-          className="mt-4 w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded"
+          className="mt-6 w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded flex items-center justify-center gap-2 font-semibold"
         >
-          บันทึก
+          <Save className="w-5 h-5" />
+          บันทึกที่อยู่
         </button>
       </dialog>
+
 
       {/* ส่วนแสดงที่อยู่ */}
       <div className="bg-white p-4 rounded shadow mb-4">
@@ -527,50 +402,50 @@ export function CheckoutForm() {
           <span className="text-red-500">{formatPrice(total)}</span>
         </div>
       </div>
+      
       {/* วิธีการชำระเงิน */}
-      <div className="bg-white p-4 rounded shadow mb-4">
+      <div className="bg-white p-6 rounded shadow mb-6">
         <h2 className="text-lg font-semibold text-brown-800 mb-4 flex items-center gap-2">
           <QrCode className="w-5 h-5 text-yellow-500" />
           เลือกวิธีการชำระเงิน
         </h2>
 
-        <div className="flex gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <button
-            className={`flex-1 px-4 py-2 rounded-lg transition ${
+            className={`border rounded-lg p-4 transition shadow-sm ${
               paymentMethod === "online"
-                ? "bg-yellow-500 text-white shadow"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-yellow-100 border-yellow-500"
+                : "bg-gray-50 hover:bg-gray-100"
             }`}
             onClick={() => setPaymentMethod("online")}
           >
-            โอนผ่านบัญชีธนาคาร
+            <div className="flex items-center gap-3">
+              <Banknote className="w-6 h-6 text-yellow-500" />
+              โอนผ่านบัญชีธนาคาร
+            </div>
           </button>
           <button
-            className={`flex-1 px-4 py-2 rounded-lg transition ${
+            className={`border rounded-lg p-4 transition shadow-sm ${
               paymentMethod === "qr"
-                ? "bg-yellow-500 text-white shadow"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-yellow-100 border-yellow-500"
+                : "bg-gray-50 hover:bg-gray-100"
             }`}
             onClick={() => setPaymentMethod("qr")}
           >
-            สแกน QR Code
+            <div className="flex items-center gap-3">
+              <QrCode className="w-6 h-6 text-yellow-500" />
+              สแกน QR Code
+            </div>
           </button>
         </div>
 
         {paymentMethod === "online" ? (
-          <div className="space-y-3 text-sm text-gray-700">
+          <div className="space-y-4 text-sm text-gray-700">
             <div>
-              <p className="font-medium">ธนาคารไทยพาณิชย์</p>
-              <p>
-                เลขบัญชี: <span className="font-medium">123-456-7890</span>
-              </p>
-              <p>
-                ชื่อบัญชี:{" "}
-                <span className="font-medium">บริษัท เบญจภัณฑ์๕ จำกัด</span>
-              </p>
-              <p className="text-gray-500 text-xs">
-                หลังโอนเสร็จ กรุณาแนบสลิปแล้วกด “ยืนยันการชำระเงิน”
-              </p>
+              <p className="font-medium text-brown-800">ธนาคารไทยพาณิชย์</p>
+              <p>เลขบัญชี: <span className="font-medium">123-456-7890</span></p>
+              <p>ชื่อบัญชี: <span className="font-medium">บริษัท เบญจภัณฑ์๕ จำกัด</span></p>
+              <p className="text-gray-500 text-xs mt-1">แนบสลิปแล้วกด “ยืนยันการชำระเงิน”</p>
             </div>
 
             <div>
@@ -581,22 +456,20 @@ export function CheckoutForm() {
                 type="file"
                 accept="image/*"
                 onChange={(e) => {
-                  if (e.target.files && e.target.files.length > 0) {
-                    setSlipFile(e.target.files[0]);
-                  }
+                  if (e.target.files?.length) setSlipFile(e.target.files[0]);
                 }}
-                className="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer focus:outline-none"
+                className="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-yellow-500 file:text-white file:font-semibold hover:file:bg-yellow-600"
               />
             </div>
           </div>
         ) : (
-          <div className="space-y-2 text-center">
+          <div className="text-center space-y-2">
             <Image
               src="/qrcode-sample.png"
               alt="QR Code"
               width={160}
               height={160}
-              className="mx-auto"
+              className="mx-auto rounded shadow"
             />
             <p className="text-gray-500 text-xs">
               หลังสแกนเสร็จ กรุณากด “ยืนยันการชำระเงิน”
@@ -604,6 +477,7 @@ export function CheckoutForm() {
           </div>
         )}
       </div>
+
       <div className="flex gap-4">
         <Button
           onClick={() => router.push("/cart")}

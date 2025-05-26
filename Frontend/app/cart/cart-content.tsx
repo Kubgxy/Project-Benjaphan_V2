@@ -60,6 +60,13 @@ export function CartContent() {
       );
       setCartItems(response.data.cart.items);
       setIsLoggedIn(true);
+
+      // ✅ ตั้งค่า selectedItems ให้เลือกสินค้าทั้งหมดโดยอัตโนมัติ
+      const initialSelectedItems: { [key: string]: boolean } = {};
+      response.data.cart.items.forEach((item) => {
+        initialSelectedItems[`${item.productId}-${item.size}`] = true;
+      });
+      setSelectedItems(initialSelectedItems);
     } catch (error: any) {
       if (error.response?.status === 401) {
         return;

@@ -197,11 +197,9 @@ export function WishlistContent() {
                                       : "outline"
                                   }
                                   size="sm"
-                                  onClick={() =>
-                                    handleSelectSize(product.id_product, s.size)
-                                  }
+                                  onClick={() => handleSelectSize(product.id_product, s.size)}
                                 >
-                                  {s.size}
+                                  {s.size} (เหลือ {s.quantity})
                                 </Button>
                               ))}
                             </div>
@@ -299,11 +297,9 @@ export function WishlistContent() {
                                   ? "default"
                                   : "outline"
                               }
-                              onClick={() =>
-                                handleSelectSize(product.id_product, s.size)
-                              }
+                              onClick={() => handleSelectSize(product.id_product, s.size)}
                             >
-                              {s.size}
+                              {s.size} (เหลือ {s.quantity})
                             </Button>
                           ))}
                         </div>
