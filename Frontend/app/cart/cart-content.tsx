@@ -11,6 +11,7 @@ import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { ShoppingBasket, Banknote } from "lucide-react";
 import { getBaseUrl } from "@/lib/api";
+import CustomCheckbox from "@/components/CustomCheckbox";
 
 interface CartItem {
   productId: string;
@@ -197,47 +198,41 @@ export function CartContent() {
             {/* Mobile View (Card Style) */}
             <div className="md:hidden space-y-4">
               {/* Select All Checkbox */}
-              <div className="bg-white rounded-lg shadow-sm p-4 flex items-center">
-                <input
-                  type="checkbox"
-                  checked={
-                    cartItems.length > 0 &&
-                    cartItems.every(
-                      (item) => selectedItems[`${item.productId}-${item.size}`]
-                    )
+              <CustomCheckbox
+                checked={
+                  cartItems.length > 0 &&
+                  cartItems.every(
+                    (item) => selectedItems[`${item.productId}-${item.size}`]
+                  )
+                }
+                onChange={(e) => {
+                  const newSelected: { [key: string]: boolean } = {};
+                  if (e.target.checked) {
+                    cartItems.forEach((item) => {
+                      newSelected[`${item.productId}-${item.size}`] = true;
+                    });
                   }
-                  onChange={(e) => {
-                    const newSelected: { [key: string]: boolean } = {};
-                    if (e.target.checked) {
-                      cartItems.forEach((item) => {
-                        newSelected[`${item.productId}-${item.size}`] = true;
-                      });
-                    }
-                    setSelectedItems(newSelected);
-                  }}
-                  className="mr-2"
-                />
-                <span className="font-medium text-brown-800">
-                  เลือกสินค้าทั้งหมด
-                </span>
-              </div>
+                  setSelectedItems(newSelected);
+                }}
+                label="เลือกสินค้าทั้งหมด"
+              />
 
               {cartItems.map((item) => (
                 <div
                   key={`${item.productId}-${item.size}`}
                   className="bg-white rounded-lg shadow-sm p-3 flex items-start gap-3"
                 >
-                  <input
-                    type="checkbox"
+                  <CustomCheckbox
                     checked={
-                      selectedItems[`${item.productId}-${item.size}`] || false
-                    }
-                    onChange={(e) =>
-                      setSelectedItems({
-                        ...selectedItems,
-                        [`${item.productId}-${item.size}`]: e.target.checked,
-                      })
-                    }
+                        selectedItems[`${item.productId}-${item.size}`] || false
+                      }
+                      onChange={(e) =>
+                        setSelectedItems({
+                          ...selectedItems,
+                          [`${item.productId}-${item.size}`]: e.target.checked,
+                        })
+                      }
+                    label=""
                     className="mt-1"
                   />
 
@@ -363,25 +358,25 @@ export function CartContent() {
                   <thead>
                     <tr className="border-b text-brown-800">
                       <th className="text-left pb-4">
-                        <input
-                          type="checkbox"
+                        <CustomCheckbox
                           checked={
-                            cartItems.length > 0 &&
-                            cartItems.every(
-                              (item) =>
-                                selectedItems[`${item.productId}-${item.size}`]
-                            )
-                          }
-                          onChange={(e) => {
-                            const newSelected: { [key: string]: boolean } = {};
-                            if (e.target.checked) {
-                              cartItems.forEach((item) => {
-                                newSelected[`${item.productId}-${item.size}`] =
-                                  true;
-                              });
+                              cartItems.length > 0 &&
+                              cartItems.every(
+                                (item) =>
+                                  selectedItems[`${item.productId}-${item.size}`]
+                              )
                             }
-                            setSelectedItems(newSelected);
-                          }}
+                            onChange={(e) => {
+                              const newSelected: { [key: string]: boolean } = {};
+                              if (e.target.checked) {
+                                cartItems.forEach((item) => {
+                                  newSelected[`${item.productId}-${item.size}`] =
+                                    true;
+                                });
+                              }
+                              setSelectedItems(newSelected);
+                            }}
+                          label=""
                           className="mr-2"
                         />
                         สินค้า
@@ -399,8 +394,7 @@ export function CartContent() {
                       >
                         <td className="py-4">
                           <div className="flex items-center text-brown-800">
-                            <input
-                              type="checkbox"
+                            <CustomCheckbox
                               checked={
                                 selectedItems[
                                   `${item.productId}-${item.size}`
@@ -413,6 +407,7 @@ export function CartContent() {
                                     e.target.checked,
                                 })
                               }
+                              label=""
                               className="mr-2"
                             />
                             <div className="relative w-16 h-16 mr-4 bg-gray-50">
