@@ -238,31 +238,72 @@ export function CheckoutForm() {
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { label: "ชื่อผู้รับ", value: shippingInfo.Name, key: "Name" },
-            { label: "เบอร์ติดต่อ", value: shippingInfo.phone, key: "phone", type: "tel", maxLength: 10 },
-            { label: "สถานที่ (บ้าน / บริษัท / โรงงาน)", value: shippingInfo.label, key: "label" },
-            { label: "ที่อยู่", value: shippingInfo.addressLine, key: "addressLine" },
-            { label: "เขต / อำเภอ", value: shippingInfo.city, key: "city" },
-            { label: "จังหวัด", value: shippingInfo.province, key: "province" },
-            { label: "รหัสไปรษณีย์", value: shippingInfo.postalCode, key: "postalCode", type: "number" },
-          ].map(({ label, value, key, type = "text", maxLength }) => (
-            <div key={key} className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 mb-1">{label}</label>
-              <input
-                type={type}
-                maxLength={maxLength}
-                value={value}
-                onChange={(e) =>
-                  setShippingInfo({
-                    ...shippingInfo,
-                    [key]: key === "phone" ? e.target.value.replace(/\D/g, "").slice(0, 10) : e.target.value,
-                  })
-                }
-                className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
-              />
-            </div>
-          ))}
+            {
+              [
+                {
+                  label: "ชื่อผู้รับ",
+                  value: shippingInfo.Name,
+                  key: "Name",
+                },
+                {
+                  label: "เบอร์ติดต่อ",
+                  value: shippingInfo.phone,
+                  key: "phone",
+                  type: "tel",
+                  maxLength: 10,
+                  placeholder: "กรอกแต่ตัวเลข 10 หลัก",
+                  pattern: "[0-9]{10}",
+                },
+                {
+                  label: "สถานที่",
+                  value: shippingInfo.label,
+                  key: "label",
+                  placeholder: "เช่น บ้าน, บริษัท, โรงงาน",
+                },
+                {
+                  label: "ที่อยู่",
+                  value: shippingInfo.addressLine,
+                  key: "addressLine",
+                  placeholder: "เช่น 123/45 หมู่บ้านสุขใจ ถนนประชาอุทิศ",
+                },
+                {
+                  label: "เขต / อำเภอ",
+                  value: shippingInfo.city,
+                  key: "city",
+                },
+                {
+                  label: "จังหวัด",
+                  value: shippingInfo.province,
+                  key: "province",
+                },
+                {
+                  label: "รหัสไปรษณีย์",
+                  value: shippingInfo.postalCode,
+                  key: "postalCode",
+                  type: "number",
+                },
+              ].map(({ label, value, key, type = "text", maxLength, placeholder }) => (
+                <div key={key} className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-700 mb-1">{label}</label>
+                  <input
+                    type={type}
+                    maxLength={maxLength}
+                    value={value}
+                    placeholder={placeholder}
+                    onChange={(e) =>
+                      setShippingInfo({
+                        ...shippingInfo,
+                        [key]:
+                          key === "phone"
+                            ? e.target.value.replace(/\D/g, "").slice(0, 10)
+                            : e.target.value,
+                      })
+                    }
+                    className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
+                  />
+                </div>
+              ))
+            }
         </div>
 
         <button
@@ -402,7 +443,7 @@ export function CheckoutForm() {
           <span className="text-red-500">{formatPrice(total)}</span>
         </div>
       </div>
-      
+
       {/* วิธีการชำระเงิน */}
       <div className="bg-white p-6 rounded shadow mb-6">
         <h2 className="text-lg font-semibold text-brown-800 mb-4 flex items-center gap-2">
