@@ -30,7 +30,7 @@ export const registerUser = async (
   try {
     // ✅ ตรวจอีเมลซ้ำ
     const existingEmail = await User.findOne({
-      email: email.toLowerCase().trim(),
+      email: email ? email.toLowerCase().trim() : "",
     });
     if (existingEmail) {
       res.status(400).json({ message: "❌ Email already exists" });
@@ -52,7 +52,7 @@ export const registerUser = async (
     const newUser = new User({
       firstName,
       lastName,
-      email: email.toLowerCase().trim(),
+      email: email ? email.toLowerCase().trim() : "",
       password: hashedPassword,
       phoneNumber: phoneNumber.trim(),
       addresses,
@@ -223,7 +223,7 @@ export const updateMe = async (
 
     // ✅ ตรวจ email ซ้ำ (ยกเว้นของตัวเอง)
     const existingEmail = await User.findOne({
-      email: email.toLowerCase().trim(),
+      email: email ? email.toLowerCase().trim() : "",
       _id: { $ne: req.user?.userId },
     });
     if (existingEmail) {
