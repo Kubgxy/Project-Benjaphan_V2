@@ -441,8 +441,12 @@ const Customers = () => {
                           {selectedCustomer.addresses[0].addressLine}
                         </p>
                         <p>
-                          <span className="font-semibold">City:</span>{" "}
-                          {selectedCustomer.addresses[0].city}
+                          <span className="font-semibold">District:</span>{" "}
+                          {selectedCustomer.addresses[0].district}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Sub District:</span>{" "}
+                          {selectedCustomer.addresses[0].subDistrict}
                         </p>
                       </div>
                       <div>

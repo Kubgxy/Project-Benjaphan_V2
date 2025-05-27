@@ -310,9 +310,10 @@ export const addAddress = async (
       Name,
       label,
       addressLine,
-      city,
+      district,
       province,
       postalCode,
+      subDistrict,
       country,
       phone,
     } = req.body;
@@ -322,9 +323,10 @@ export const addAddress = async (
       !Name ||
       !label ||
       !addressLine ||
-      !city ||
+      !district ||
       !province ||
       !postalCode ||
+      !subDistrict ||
       !country ||
       !phone
     ) {
@@ -336,9 +338,10 @@ export const addAddress = async (
       Name,
       label,
       addressLine,
-      city,
+      district,
       province,
       postalCode,
+      subDistrict,
       country,
       phone,
     };
@@ -369,9 +372,10 @@ export const updateAddress = async (req: Request, res: Response) => {
     const {
       Name,
       addressLine,
-      city,
+      district,
       province,
       postalCode,
+      subDistrict,
       country,
       label,
       phone,
@@ -383,9 +387,10 @@ export const updateAddress = async (req: Request, res: Response) => {
       !Name ||
       !label ||
       !addressLine ||
-      !city ||
+      !district ||
       !province ||
       !postalCode ||
+      !subDistrict ||
       !country ||
       !phone
     ) {
@@ -402,9 +407,10 @@ export const updateAddress = async (req: Request, res: Response) => {
             Name,
             label,
             addressLine,
-            city,
+            district,
             province,
             postalCode,
+            subDistrict,
             country,
             phone,
           },

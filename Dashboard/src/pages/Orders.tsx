@@ -79,9 +79,10 @@ type Order = {
     Name: string;
     label: string;
     addressLine: string;
-    city: string;
+    district: string;
     province: string;
     postalCode: string;
+    subDistrict: string;
     country: string;
     phone: string;
   };
@@ -568,7 +569,8 @@ const Orders = () => {
                 <p>
                   {selectedOrder.shippingInfo.label},{" "}
                   {selectedOrder.shippingInfo.addressLine},{" "}
-                  {selectedOrder.shippingInfo.city},{" "}
+                  {selectedOrder.shippingInfo.district},{" "}
+                  {selectedOrder.shippingInfo.subDistrict},{" "}
                   {selectedOrder.shippingInfo.province},{" "}
                   {selectedOrder.shippingInfo.postalCode}{" "}
                   {selectedOrder.shippingInfo.country}

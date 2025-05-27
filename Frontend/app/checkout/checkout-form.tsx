@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { getBaseUrl } from "@/lib/api";
+import { ThailandAddressTypeahead, ThailandAddressValue } from "react-thailand-address-typeahead";
 
 export function CheckoutForm() {
   const router = useRouter();
@@ -30,9 +31,7 @@ export function CheckoutForm() {
   const [loading, setLoading] = useState(true);
   const modalRef = useRef<HTMLDialogElement>(null);
   const [addressList, setAddressList] = useState<any[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    null
-  );
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const [slipFile, setSlipFile] = useState<File | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "qr">("online");
@@ -40,12 +39,14 @@ export function CheckoutForm() {
     Name: "",
     label: "",
     addressLine: "",
-    city: "",
+    district: "",
     province: "",
     postalCode: "",
+    subDistrict: "",
     country: "Thailand",
     phone: "",
   });
+  const [addressValue, setAddressValue] = useState(ThailandAddressValue.empty());
 
   // โหลดข้อมูล
   useEffect(() => {
@@ -79,9 +80,10 @@ export function CheckoutForm() {
             Name: defaultAddr.Name,
             label: defaultAddr.label,
             addressLine: defaultAddr.addressLine,
-            city: defaultAddr.city,
+            district: defaultAddr.district,
             province: defaultAddr.province,
             postalCode: defaultAddr.postalCode,
+            subDistrict: defaultAddr.subDistrict,
             country: defaultAddr.country,
             phone: defaultAddr.phone,
           });
@@ -98,7 +100,28 @@ export function CheckoutForm() {
     fetchAddressList();
   }, [router]);
 
+  // อัปเดต shippingInfo เมื่อ addressValue เปลี่ยน
+  useEffect(() => {
+    setShippingInfo((prev) => ({
+      ...prev,
+      subDistrict: addressValue.subdistrict || "",
+      district: addressValue.district || "",
+      province: addressValue.province || "",
+      postalCode: addressValue.postalCode || "",
+    }));
+  }, [addressValue]);
+
   const handleSaveShipping = async () => {
+    // ตรวจสอบความครบถ้วน
+    if (!addressValue.subdistrict || !addressValue.district || !addressValue.province || !addressValue.postalCode) {
+      toast({
+        title: "❌ กรุณากรอกที่อยู่ให้ครบถ้วน",
+        description: "ต้องระบุ ตำบล, อำเภอ, จังหวัด, และรหัสไปรษณีย์",
+        duration: 3000,
+      });
+      return;
+    }
+
     try {
       if (selectedAddressId) {
         await axios.patch(
@@ -238,72 +261,86 @@ export function CheckoutForm() {
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* ฟิลด์ที่ไม่ใช่ autocompletion */}
+          {[
             {
-              [
-                {
-                  label: "ชื่อผู้รับ",
-                  value: shippingInfo.Name,
-                  key: "Name",
-                },
-                {
-                  label: "เบอร์ติดต่อ",
-                  value: shippingInfo.phone,
-                  key: "phone",
-                  type: "tel",
-                  maxLength: 10,
-                  placeholder: "กรอกแต่ตัวเลข 10 หลัก",
-                  pattern: "[0-9]{10}",
-                },
-                {
-                  label: "สถานที่",
-                  value: shippingInfo.label,
-                  key: "label",
-                  placeholder: "เช่น บ้าน, บริษัท, โรงงาน",
-                },
-                {
-                  label: "ที่อยู่",
-                  value: shippingInfo.addressLine,
-                  key: "addressLine",
-                  placeholder: "เช่น 123/45 หมู่บ้านสุขใจ ถนนประชาอุทิศ",
-                },
-                {
-                  label: "เขต / อำเภอ",
-                  value: shippingInfo.city,
-                  key: "city",
-                },
-                {
-                  label: "จังหวัด",
-                  value: shippingInfo.province,
-                  key: "province",
-                },
-                {
-                  label: "รหัสไปรษณีย์",
-                  value: shippingInfo.postalCode,
-                  key: "postalCode",
-                  type: "number",
-                },
-              ].map(({ label, value, key, type = "text", maxLength, placeholder }) => (
-                <div key={key} className="flex flex-col">
-                  <label className="text-sm font-medium text-gray-700 mb-1">{label}</label>
-                  <input
-                    type={type}
-                    maxLength={maxLength}
-                    value={value}
-                    placeholder={placeholder}
-                    onChange={(e) =>
-                      setShippingInfo({
-                        ...shippingInfo,
-                        [key]:
-                          key === "phone"
-                            ? e.target.value.replace(/\D/g, "").slice(0, 10)
-                            : e.target.value,
-                      })
-                    }
-                    className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
-                  />
-                </div>
-              ))
-            }
+              label: "ชื่อผู้รับ",
+              value: shippingInfo.Name,
+              key: "Name",
+              placeholder: "กรอกชื่อผู้รับ",
+            },
+            {
+              label: "เบอร์ติดต่อ",
+              value: shippingInfo.phone,
+              key: "phone",
+              type: "tel",
+              maxLength: 10,
+              placeholder: "กรอกแต่ตัวเลข 10 หลัก",
+              pattern: "[0-9]{10}",
+            },
+            {
+              label: "สถานที่",
+              value: shippingInfo.label,
+              key: "label",
+              placeholder: "เช่น บ้าน, บริษัท, โรงงาน",
+            },
+            {
+              label: "ที่อยู่",
+              value: shippingInfo.addressLine,
+              key: "addressLine",
+              placeholder: "เช่น 123/45 หมู่บ้านสุขใจ ถนนประชาอุทิศ",
+            },
+          ].map(({ label, value, key, type = "text", maxLength, placeholder }) => (
+            <div key={key} className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-1">{label}</label>
+              <input
+                type={type}
+                maxLength={maxLength}
+                value={value}
+                placeholder={placeholder}
+                onChange={(e) =>
+                  setShippingInfo({
+                    ...shippingInfo,
+                    [key]:
+                      key === "phone"
+                        ? e.target.value.replace(/\D/g, "").slice(0, 10)
+                        : e.target.value,
+                  })
+                }
+                className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
+              />
+            </div>
+          ))}
+
+          {/* Thailand Address Typeahead */}
+          <div className="flex flex-col col-span-2">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              ที่อยู่ (ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์)
+            </label>
+            <ThailandAddressTypeahead
+              value={addressValue}
+              onValueChange={(val) => setAddressValue({ ...val })}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ThailandAddressTypeahead.SubdistrictInput
+                  placeholder="กรุณาเลือก ตำบล"
+                  className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
+                />
+                <ThailandAddressTypeahead.DistrictInput
+                  placeholder="กรุณาเลือก อำเภอ"
+                  className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
+                />
+                <ThailandAddressTypeahead.ProvinceInput
+                  placeholder="กรุณาเลือก จังหวัด"
+                  className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
+                />
+                <ThailandAddressTypeahead.PostalCodeInput
+                  placeholder="กรุณากรอกรหัสไปรษณีย์"
+                  className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
+                />
+              </div>
+            </ThailandAddressTypeahead>
+          </div>
         </div>
 
         <button
@@ -314,7 +351,6 @@ export function CheckoutForm() {
           บันทึกที่อยู่
         </button>
       </dialog>
-
 
       {/* ส่วนแสดงที่อยู่ */}
       <div className="bg-white p-4 rounded shadow mb-4">
@@ -331,9 +367,10 @@ export function CheckoutForm() {
                 Name: "",
                 label: "",
                 addressLine: "",
-                city: "",
+                district: "",
                 province: "",
                 postalCode: "",
+                subDistrict: "",
                 country: "Thailand",
                 phone: "",
               });
@@ -356,9 +393,10 @@ export function CheckoutForm() {
                     Name: addr.Name,
                     label: addr.label,
                     addressLine: addr.addressLine,
-                    city: addr.city,
+                    district: addr.district,
                     province: addr.province,
                     postalCode: addr.postalCode,
+                    subDistrict: addr.subDistrict,
                     country: addr.country,
                     phone: addr.phone,
                   });
@@ -369,7 +407,7 @@ export function CheckoutForm() {
               {addressList.map((addr) => (
                 <option key={addr._id} value={addr._id}>
                   ชื่อผู้รับ : {addr.Name} บ้านเลขที่ : {addr.addressLine} ,{" "}
-                  {addr.city} , {addr.province} {addr.postalCode}
+                  {addr.district} , {addr.province} {addr.postalCode}
                 </option>
               ))}
             </select>

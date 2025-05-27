@@ -292,7 +292,7 @@ export default function OrderTrackingPage() {
             </p>
             <p className="text-sm text-gray-700">
               <strong>ที่อยู่:</strong> {order.shippingInfo.addressLine},{" "}
-              {order.shippingInfo.city}, {order.shippingInfo.province},{" "}
+              {order.shippingInfo.district}, {order.shippingInfo.subDistrict}, {order.shippingInfo.province},{" "}
               {order.shippingInfo.postalCode}, {order.shippingInfo.country}
             </p>
           </div>

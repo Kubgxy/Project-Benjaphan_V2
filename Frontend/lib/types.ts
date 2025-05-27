@@ -94,7 +94,8 @@ export interface ShippingInfo {
   email: string
   phone: string
   address: string
-  city: string
+  district: string
+  subdistrict: string
   state: string
   postalCode: string
   country: string

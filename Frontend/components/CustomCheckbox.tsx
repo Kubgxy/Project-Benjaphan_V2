@@ -31,15 +31,15 @@ const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
                    mr-2"
       >
         <svg
-          className="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+            className="w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition drop-shadow-sm"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
         >
-          <polyline points="20 6 9 17 4 12" />
+            <polyline points="20 6 9 17 4 12" />
         </svg>
       </div>
       {label && (

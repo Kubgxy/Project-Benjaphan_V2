@@ -100,13 +100,14 @@ export const createOrder = async (req: Request, res: Response) => {
       items: formattedItems,
       shippingInfo: {
         Name: shippingInfo.Name,
-        phone: shippingInfo.phone,
         label: shippingInfo.label,
         addressLine: shippingInfo.addressLine,
-        city: shippingInfo.city,
+        district: shippingInfo.district,
         province: shippingInfo.province,
         postalCode: shippingInfo.postalCode,
+        subDistrict: shippingInfo.subDistrict,
         country: shippingInfo.country || "Thailand",
+        phone: shippingInfo.phone,
       },
       payment: {
         method: paymentMethod || "online", // ถ้า default ใช้ 'online'
