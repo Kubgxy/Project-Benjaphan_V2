@@ -6,7 +6,7 @@ interface CustomCheckboxProps {
   checked: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   label?: string;
-  className?: string; // เพิ่มเผื่ออยากปรับ style เพิ่ม
+  className?: string;
 }
 
 const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
@@ -16,7 +16,7 @@ const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
   className = "",
 }) => {
   return (
-    <label className={`inline-flex items-center cursor-pointer ${className}`}>
+    <label className={`inline-flex items-center cursor-pointer select-none ${className}`}>
       <input
         type="checkbox"
         className="peer hidden"
@@ -24,8 +24,11 @@ const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
         onChange={onChange}
       />
       <div
-        className="w-5 h-5 mr-3 rounded border-2 border-yellow-500 flex items-center justify-center 
-                   peer-checked:bg-yellow-500 peer-checked:border-yellow-500 transition"
+        className="w-5 h-5 rounded border-2 border-yellow-500 flex items-center justify-center
+                   peer-checked:bg-yellow-500 peer-checked:border-yellow-500
+                   transition duration-150 ease-in-out
+                   hover:ring-2 hover:ring-yellow-300
+                   mr-2"
       >
         <svg
           className="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition"
