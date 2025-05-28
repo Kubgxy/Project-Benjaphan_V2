@@ -59,6 +59,7 @@ export default function ProductsPage() {
           }
         );
         const data = await response.json();
+        console.log("Fetched products:", data.products);
         if (response.ok) {
           setProducts(data.products);
         } else {

@@ -65,7 +65,7 @@ interface Address {
   label: string;
   addressLine: string;
   district: string;
-  subDistrict: string;
+  subdistrict: string;
   province: string;
   postalCode: string;
   country: string;
@@ -105,7 +105,7 @@ export function AccountContent() {
     label: "",
     addressLine: "",
     district: "",
-    subDistrict: "",
+    subdistrict: "",
     province: "",
     postalCode: "",
     country: "Thailand",
@@ -320,7 +320,7 @@ export function AccountContent() {
       label: "",
       addressLine: "",
       district: "",
-      subDistrict: "",
+      subdistrict: "",
       province: "",
       postalCode: "",
       country: "Thailand",
@@ -722,7 +722,19 @@ export function AccountContent() {
                       />
                       <input
                         type="text"
-                        placeholder="อำเภอ / เขต / ตำบล"
+                        placeholder="แขวง / ตำบล"
+                        value={newAddress.subdistrict}
+                        onChange={(e) =>
+                          setNewAddress({
+                            ...newAddress,
+                            subdistrict: e.target.value,
+                          })
+                        }
+                        className="w-full border rounded px-3 py-2"
+                      />
+                      <input
+                        type="text"
+                        placeholder="เขต / อำเภอ"
                         value={newAddress.district}
                         onChange={(e) =>
                           setNewAddress({
@@ -814,7 +826,7 @@ export function AccountContent() {
                                 Name: "",
                                 addressLine: "",
                                 district: "",
-                                subDistrict: "",
+                                subdistrict: "",
                                 province: "",
                                 postalCode: "",
                                 country: "Thailand",
@@ -836,7 +848,7 @@ export function AccountContent() {
                               <div>
                                 <p className="font-medium">{addr.label}</p>
                                 <p className="text-sm text-gray-500">
-                                  {addr.addressLine}, {addr.district}, {addr.subDistrict},{" "}
+                                  {addr.addressLine}, {addr.district}, {addr.subdistrict},{" "}
                                   {addr.province}, {addr.postalCode},{" "}
                                   {addr.country}
                                 </p>
@@ -870,7 +882,7 @@ export function AccountContent() {
                                 label: "",
                                 addressLine: "",
                                 district: "",
-                                subDistrict: "",
+                                subdistrict: "",
                                 province: "",
                                 postalCode: "",
                                 country: "Thailand",

@@ -3970,7 +3970,6 @@ __metadata:
     react-icons: "npm:^5.5.0"
     react-markdown: "npm:^10.1.0"
     react-resizable-panels: "npm:^2.1.7"
-    react-thailand-address-typeahead: "npm:^2.0.1"
     recharts: "npm:2.15.0"
     remark-gfm: "npm:^4.0.1"
     sonner: "npm:^1.7.1"
@@ -4621,16 +4620,6 @@ __metadata:
     "@types/react":
       optional: true
   checksum: 10c0/841938ff16d16a6b76895f4cb2e1fea957e5fe3b30febbf03a54892dae1c9153f2383e231dea0b3ba41192ad2f2849448fa859caccd288943bce32639e971bee
-  languageName: node
-  linkType: hard
-
-"react-thailand-address-typeahead@npm:^2.0.1":
-  version: 2.0.1
-  resolution: "react-thailand-address-typeahead@npm:2.0.1"
-  peerDependencies:
-    react: ^18.2.0
-    react-dom: ^18.2.0
-  checksum: 10c0/9dbe1947926775c52d4a0562ae96b350484d1a5b5c9ca8e7a2807ce3350de6f10b4e18e2a6d44981582376ccc426b1c8896e0833d2107bd64b58e4d99aba9dd4
   languageName: node
   linkType: hard
 

@@ -313,11 +313,13 @@ export const addAddress = async (
       district,
       province,
       postalCode,
-      subDistrict,
+      subdistrict,
       country,
       phone,
     } = req.body;
     const userId = req.user?.userId;
+
+    console.log("data", req.body);
 
     if (
       !Name ||
@@ -326,7 +328,7 @@ export const addAddress = async (
       !district ||
       !province ||
       !postalCode ||
-      !subDistrict ||
+      !subdistrict ||
       !country ||
       !phone
     ) {
@@ -341,7 +343,7 @@ export const addAddress = async (
       district,
       province,
       postalCode,
-      subDistrict,
+      subdistrict,
       country,
       phone,
     };
@@ -375,7 +377,7 @@ export const updateAddress = async (req: Request, res: Response) => {
       district,
       province,
       postalCode,
-      subDistrict,
+      subdistrict,
       country,
       label,
       phone,
@@ -390,7 +392,7 @@ export const updateAddress = async (req: Request, res: Response) => {
       !district ||
       !province ||
       !postalCode ||
-      !subDistrict ||
+      !subdistrict ||
       !country ||
       !phone
     ) {
@@ -410,7 +412,7 @@ export const updateAddress = async (req: Request, res: Response) => {
             district,
             province,
             postalCode,
-            subDistrict,
+            subdistrict,
             country,
             phone,
           },
@@ -426,6 +428,7 @@ export const updateAddress = async (req: Request, res: Response) => {
 
     res.status(200).json({
       message: "✅ Address updated successfully",
+      updatedAddress: updatedUser.addresses.find((a) => a._id.toString() === addressId),
       addresses: updatedUser.addresses,
     });
   } catch (error) {

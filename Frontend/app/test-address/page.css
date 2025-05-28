@@ -1,0 +1,32 @@
+.zipcode-input {
+  width: 150px;
+  padding: 8px;
+  font-size: 16px;
+  text-align: center;
+  letter-spacing: 2px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+}
+
+.zipcode-input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.suggestion-list {
+  background: white;
+  border: 1px solid #ddd;
+  margin-top: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  border-radius: 4px;
+  position: absolute;
+  width: 100%;
+  z-index: 10;
+}

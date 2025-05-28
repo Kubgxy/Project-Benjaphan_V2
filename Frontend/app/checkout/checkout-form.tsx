@@ -18,10 +18,24 @@ import {
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { getBaseUrl } from "@/lib/api";
-import { ThailandAddressTypeahead, ThailandAddressValue } from "react-thailand-address-typeahead";
+import { ShippingInfo, Address, District, Province, Zipcode, SubDistrict } from "@/lib/types";
+import Swal from "sweetalert2";
+
+const defaultShippingInfo: ShippingInfo = {
+  Name: "",
+  label: "",
+  addressLine: "",
+  subdistrict: "",
+  district: "",
+  province: "",
+  postalCode: "",
+  country: "Thailand",
+  phone: "",
+};
 
 export function CheckoutForm() {
   const router = useRouter();
+  const suggestRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkoutItems, setCheckoutItems] = useState<any[]>([]);
@@ -32,29 +46,101 @@ export function CheckoutForm() {
   const modalRef = useRef<HTMLDialogElement>(null);
   const [addressList, setAddressList] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-
   const [slipFile, setSlipFile] = useState<File | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "qr">("online");
-  const [shippingInfo, setShippingInfo] = useState({
+  const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     Name: "",
     label: "",
     addressLine: "",
+    subdistrict: "",
     district: "",
     province: "",
     postalCode: "",
-    subDistrict: "",
     country: "Thailand",
     phone: "",
   });
-  const [addressValue, setAddressValue] = useState(ThailandAddressValue.empty());
+  const [allAddresses, setAllAddresses] = useState<Address[]>([]);
+  const [suggestions, setSuggestions] = useState<Address[]>([]);
+  const [showAddressModal, setShowAddressModal] = useState(false);
 
-  // โหลดข้อมูล
+  useEffect(() => {
+  const loadAddressData = async () => {
+    try {
+      const [districts, provinces, subDistricts, zipcodes] = await Promise.all([
+        fetch("/data/districts.json").then((res) => res.json()) as Promise<District[]>,
+        fetch("/data/provinces.json").then((res) => res.json()) as Promise<Province[]>,
+        fetch("/data/subDistricts.json").then((res) => res.json()) as Promise<SubDistrict[]>,
+        fetch("/data/zipcodes.json").then((res) => res.json()) as Promise<Zipcode[]>,
+      ]);
+
+      const merged: Address[] = subDistricts
+        .map((sub) => {
+          const district = districts.find((d) => d.DISTRICT_ID === sub.DISTRICT_ID);
+          const province = provinces.find((p) => p.PROVINCE_ID === sub.PROVINCE_ID);
+          const zip = zipcodes.find((z) => z.SUB_DISTRICT_CODE === sub.SUB_DISTRICT_CODE);
+
+          if (district && province && zip) {
+            return {
+              subdistrict: sub.SUB_DISTRICT_NAME,
+              district: district.DISTRICT_NAME,
+              province: province.PROVINCE_NAME,
+              zipcode: zip.ZIPCODE,
+            };
+          }
+          return null;
+        })
+        .filter((a): a is Address => a !== null);
+
+      setAllAddresses(merged);
+    } catch (err) {
+      console.error("❌ โหลดข้อมูลที่อยู่ไม่สำเร็จ", err);
+    }
+  };
+
+  loadAddressData();
+}, []);
+
+  const fetchAddressList = async (preferredId?: string) => {
+    try {
+      const res = await axios.get(`${getBaseUrl()}/api/user/getAddress`, {
+        withCredentials: true,
+      });
+
+      const addresses: any[] = res.data.addresses || [];
+      setAddressList(addresses);
+
+      // ✅ หา address ที่ match กับ preferredId
+      let selected = addresses[0];
+      if (preferredId) {
+        const matched = addresses.find((a) => a._id?.toString() === preferredId);
+        if (matched) selected = matched;
+      }
+
+      if (selected) {
+        setSelectedAddressId(selected._id?.toString() || null);
+        setShippingInfo({
+          _id: selected._id?.toString() || "",
+          Name: selected.Name,
+          label: selected.label,
+          addressLine: selected.addressLine,
+          subdistrict: selected.subdistrict,
+          district: selected.district,
+          province: selected.province,
+          postalCode: selected.postalCode,
+          country: selected.country,
+          phone: selected.phone,
+        });
+      }
+    } catch (error: any) {
+      if (error.response?.status === 401) return;
+      console.error("❌ Failed to load addresses:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchCheckoutSummary = async () => {
       try {
-        const res = await axios.get(`${getBaseUrl()}/api/order/checkoutSummary`, {
-          withCredentials: true,
-        });
+        const res = await axios.get(`${getBaseUrl()}/api/order/checkoutSummary`, { withCredentials: true });
         setCheckoutItems(res.data.items);
         setSubtotal(res.data.subtotal);
         setShipping(res.data.shipping);
@@ -67,102 +153,66 @@ export function CheckoutForm() {
       }
     };
 
-    const fetchAddressList = async () => {
-      try {
-        const res = await axios.get(`${getBaseUrl()}/api/user/getAddress`, {
-          withCredentials: true,
-        });
-        setAddressList(res.data.addresses || []);
-        if (res.data.addresses.length > 0) {
-          const defaultAddr = res.data.addresses[0];
-          setSelectedAddressId(defaultAddr._id);
-          setShippingInfo({
-            Name: defaultAddr.Name,
-            label: defaultAddr.label,
-            addressLine: defaultAddr.addressLine,
-            district: defaultAddr.district,
-            province: defaultAddr.province,
-            postalCode: defaultAddr.postalCode,
-            subDistrict: defaultAddr.subDistrict,
-            country: defaultAddr.country,
-            phone: defaultAddr.phone,
-          });
-        }
-      } catch (error: any) {
-        if (error.response?.status === 401) {
-          return;
-        }
-        console.error("❌ Failed to load addresses:", error);
-      }
-    };
-
     fetchCheckoutSummary();
     fetchAddressList();
   }, [router]);
 
-  // อัปเดต shippingInfo เมื่อ addressValue เปลี่ยน
   useEffect(() => {
-    setShippingInfo((prev) => ({
-      ...prev,
-      subDistrict: addressValue.subdistrict || "",
-      district: addressValue.district || "",
-      province: addressValue.province || "",
-      postalCode: addressValue.postalCode || "",
-    }));
-  }, [addressValue]);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestRef.current && !suggestRef.current.contains(event.target as Node)) {
+        setSuggestions([]);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleSaveShipping = async () => {
-    // ตรวจสอบความครบถ้วน
-    if (!addressValue.subdistrict || !addressValue.district || !addressValue.province || !addressValue.postalCode) {
-      toast({
-        title: "❌ กรุณากรอกที่อยู่ให้ครบถ้วน",
-        description: "ต้องระบุ ตำบล, อำเภอ, จังหวัด, และรหัสไปรษณีย์",
-        duration: 3000,
-      });
-      return;
-    }
-
     try {
+      let res;
+
       if (selectedAddressId) {
-        await axios.patch(
+        // แก้ไข
+        res = await axios.patch(
           `${getBaseUrl()}/api/user/updateAddress/${selectedAddressId}`,
           shippingInfo,
           { withCredentials: true }
         );
-        toast({
-          title: "✅ แก้ไขที่อยู่เรียบร้อยแล้ว",
-          description: "กรุณาเลือกที่อยู่เพื่อทำการสั่งซื้อ",
-          duration: 3000,
-        });
+        toast({ title: "✅ แก้ไขที่อยู่เรียบร้อยแล้ว", duration: 3000 });
+
+        // แค่ reload ด้วย id เดิม
+        fetchAddressList(selectedAddressId);
       } else {
-        await axios.post(
+        // เพิ่มใหม่
+        res = await axios.post(
           `${getBaseUrl()}/api/user/addAddress`,
           shippingInfo,
           { withCredentials: true }
         );
-        toast({
-          title: "✅ เพิ่มที่อยู่เรียบร้อยแล้ว",
-          description: "กรุณาเลือกที่อยู่เพื่อทำการสั่งซื้อ",
-          duration: 3000,
-        });
+        toast({ title: "✅ เพิ่มที่อยู่เรียบร้อยแล้ว", duration: 3000 });
+
+        const newId = res.data?.address?._id;
+        if (newId) {
+          fetchAddressList(newId); // ❗ ปล่อยให้ function นี้จัดการทั้ง selected + shippingInfo
+          modalRef.current?.close();
+        } else {
+          fetchAddressList(); // fallback
+          modalRef.current?.close();
+        }
       }
+
       modalRef.current?.close();
-      window.location.reload();
     } catch {
-      toast({
-        title: "❌ เกิดข้อผิดพลาด",
-        description: "ไม่สามารถบันทึกที่อยู่ได้",
-        duration: 3000,
-      });
+      toast({ title: "❌ เกิดข้อผิดพลาด", description: "ไม่สามารถบันทึกที่อยู่ได้", duration: 3000 });
     }
   };
 
   const handleConfirmPayment = async () => {
     if (paymentMethod === "online" && !slipFile) {
-      toast({
-        title: "❌ กรุณาแนบสลิปก่อนยืนยันการชำระเงิน",
-        duration: 3000,
-      });
+      toast({ title: "❌ กรุณาแนบสลิปก่อนยืนยันการชำระเงิน", duration: 3000 });
       return;
     }
 
@@ -179,20 +229,10 @@ export function CheckoutForm() {
         images: item.images || [],
       }));
 
-      const orderRes = await createOrder({
-        items: formattedItems,
-        subtotal,
-        shipping,
-        total,
-        shippingInfo,
-        paymentMethod,
-      });
+      const orderRes = await createOrder({ items: formattedItems, subtotal, shipping, total, shippingInfo, paymentMethod });
 
       if (!orderRes.success) {
-        toast({
-          title: "❌ สร้างคำสั่งซื้อไม่สำเร็จ",
-          description: orderRes.error || "เกิดข้อผิดพลาด กรุณาลองใหม่",
-        });
+        toast({ title: "❌ สร้างคำสั่งซื้อไม่สำเร็จ", description: orderRes.error || "เกิดข้อผิดพลาด กรุณาลองใหม่" });
         setIsSubmitting(false);
         return;
       }
@@ -203,227 +243,318 @@ export function CheckoutForm() {
         const formData = new FormData();
         formData.append("slip", slipFile);
 
-        await axios.post(
-          `${getBaseUrl()}/api/order/uploadSlip/${orderId}`,
-          formData,
-          {
-            withCredentials: true,
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
+        await axios.post(`${getBaseUrl()}/api/order/uploadSlip/${orderId}`, formData, {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       }
 
-      toast({
-        title: "✅ สั่งซื้อสําเร็จ!",
-        description: "ระบบได้รับคำสั่งซื้อและอยู่ระหว่างดําเนินการ",
-        duration: 3000,
-      });
-
+      toast({ title: "✅ สั่งซื้อสําเร็จ!", description: "ระบบได้รับคำสั่งซื้อและอยู่ระหว่างดําเนินการ", duration: 3000 });
       router.push(`/order-confirmation?orderId=${orderId}`);
     } catch (err) {
       console.error("Error confirming payment:", err);
-      toast({
-        title: "❌ เกิดข้อผิดพลาด กรุณาลองใหม่",
-      });
+      toast({ title: "❌ เกิดข้อผิดพลาด กรุณาลองใหม่" });
       setIsSubmitting(false);
     }
   };
 
-  if (loading) {
-    return <div className="text-center py-12">กำลังโหลด...</div>;
-  }
-
-  if (checkoutItems.length === 0) {
-    return <div className="text-center py-12">ไม่มีสินค้าในตะกร้า</div>;
-  }
+  if (loading) return <div className="text-center py-12">กำลังโหลด...</div>;
+  if (checkoutItems.length === 0) return <div className="text-center py-12">ไม่มีสินค้าในตะกร้า</div>;
 
   return (
     <div className="container mx-auto p-4 max-w-6xl">
-      <h1 className="flex items-center gap-2 text-3xl font-display font-medium text-brown-800 mb-8">
-        <ShoppingCart className="w-8 h-8 text-yellow-500" />
-        ทำการสั่งซื้อ
-      </h1>
+    <h1 className="flex items-center gap-2 text-3xl font-display font-medium text-brown-800 mb-8">
+      <ShoppingCart className="w-8 h-8 text-yellow-500" />
+      ทำการสั่งซื้อ
+    </h1>
 
-      {/* MODAL เพิ่ม/แก้ไขที่อยู่ */}
-      <dialog
-        ref={modalRef}
-        className="rounded-lg p-6 w-full max-w-3xl z-50 bg-white shadow-xl mt-10"
+    {/* MODAL เพิ่ม/แก้ไขที่อยู่ */}
+    <dialog
+      ref={modalRef}
+      className="rounded-lg p-6 w-full max-w-3xl z-50 bg-white shadow-xl mt-10"
+    >
+      <button
+        className="absolute top-4 right-4 text-gray-500 hover:text-red-500"
+        onClick={() => modalRef.current?.close()}
       >
-        <button
-          className="absolute top-4 right-4 text-gray-500 hover:text-red-500"
-          onClick={() => modalRef.current?.close()}
-        >
-          <X className="w-6 h-6" />
-        </button>
-        <h2 className="flex items-center gap-2 text-xl font-semibold mb-6 text-brown-800">
-          <MapPinHouse className="w-6 h-6 text-yellow-500" />
-          {selectedAddressId ? "แก้ไขที่อยู่" : "เพิ่มที่อยู่ใหม่"}
-        </h2>
+        <X className="w-6 h-6" />
+      </button>
+      <h2 className="flex items-center gap-2 text-xl font-semibold mb-6 text-brown-800">
+        <MapPinHouse className="w-6 h-6 text-yellow-500" />
+        {selectedAddressId ? "แก้ไขที่อยู่" : "เพิ่มที่อยู่ใหม่"}
+      </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* ฟิลด์ที่ไม่ใช่ autocompletion */}
-          {[
-            {
-              label: "ชื่อผู้รับ",
-              value: shippingInfo.Name,
-              key: "Name",
-              placeholder: "กรอกชื่อผู้รับ",
-            },
-            {
-              label: "เบอร์ติดต่อ",
-              value: shippingInfo.phone,
-              key: "phone",
-              type: "tel",
-              maxLength: 10,
-              placeholder: "กรอกแต่ตัวเลข 10 หลัก",
-              pattern: "[0-9]{10}",
-            },
-            {
-              label: "สถานที่",
-              value: shippingInfo.label,
-              key: "label",
-              placeholder: "เช่น บ้าน, บริษัท, โรงงาน",
-            },
-            {
-              label: "ที่อยู่",
-              value: shippingInfo.addressLine,
-              key: "addressLine",
-              placeholder: "เช่น 123/45 หมู่บ้านสุขใจ ถนนประชาอุทิศ",
-            },
-          ].map(({ label, value, key, type = "text", maxLength, placeholder }) => (
-            <div key={key} className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 mb-1">{label}</label>
-              <input
-                type={type}
-                maxLength={maxLength}
-                value={value}
-                placeholder={placeholder}
-                onChange={(e) =>
-                  setShippingInfo({
-                    ...shippingInfo,
-                    [key]:
-                      key === "phone"
-                        ? e.target.value.replace(/\D/g, "").slice(0, 10)
-                        : e.target.value,
-                  })
-                }
-                className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
-              />
-            </div>
-          ))}
-
-          {/* Thailand Address Typeahead */}
-          <div className="flex flex-col col-span-2">
-            <label className="text-sm font-medium text-gray-700 mb-1">
-              ที่อยู่ (ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์)
-            </label>
-            <ThailandAddressTypeahead
-              value={addressValue}
-              onValueChange={(val) => setAddressValue({ ...val })}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ThailandAddressTypeahead.SubdistrictInput
-                  placeholder="กรุณาเลือก ตำบล"
-                  className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
-                />
-                <ThailandAddressTypeahead.DistrictInput
-                  placeholder="กรุณาเลือก อำเภอ"
-                  className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
-                />
-                <ThailandAddressTypeahead.ProvinceInput
-                  placeholder="กรุณาเลือก จังหวัด"
-                  className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
-                />
-                <ThailandAddressTypeahead.PostalCodeInput
-                  placeholder="กรุณากรอกรหัสไปรษณีย์"
-                  className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
-                />
-              </div>
-            </ThailandAddressTypeahead>
-          </div>
+      {/* ✅ Autocomplete พร้อม addressData */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* ชื่อผู้รับ */}
+        <div className="flex flex-col">
+          <label className="text-sm font-medium text-gray-700 mb-1">ชื่อผู้รับ</label>
+          <input
+            value={shippingInfo.Name}
+            onChange={(e) => setShippingInfo({ ...shippingInfo, Name: e.target.value })}
+            className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
+          />
         </div>
 
-        <button
-          onClick={handleSaveShipping}
-          className="mt-6 w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded flex items-center justify-center gap-2 font-semibold"
-        >
-          <Save className="w-5 h-5" />
-          บันทึกที่อยู่
-        </button>
-      </dialog>
+        {/* เบอร์ติดต่อ */}
+        <div className="flex flex-col">
+          <label className="text-sm font-medium text-gray-700 mb-1">เบอร์ติดต่อ</label>
+          <input
+            type="tel"
+            pattern="[0-9]{10}"
+            maxLength={10}
+            value={shippingInfo.phone}
+            onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+            className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
+          />
+        </div>
 
-      {/* ส่วนแสดงที่อยู่ */}
-      <div className="bg-white p-4 rounded shadow mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="flex gap-2 text-lg font-semibold text-brown-800 items-center">
-            <MapPinHouse className="w-6 h-6 text-yellow-500" />
-            ที่อยู่จัดส่ง
+        {/* สถานที่ */}
+        <div className="flex flex-col">
+          <label className="text-sm font-medium text-gray-700 mb-1">สถานที่</label>
+          <input
+            value={shippingInfo.label}
+            onChange={(e) => setShippingInfo({ ...shippingInfo, label: e.target.value })}
+            placeholder="บ้าน, ออฟฟิศ ฯลฯ"
+            className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
+          />
+        </div>
+
+        {/* ที่อยู่ */}
+        <div className="flex flex-col">
+          <label className="text-sm font-medium text-gray-700 mb-1">ที่อยู่</label>
+          <input
+            value={shippingInfo.addressLine}
+            onChange={(e) => setShippingInfo({ ...shippingInfo, addressLine: e.target.value })}
+            placeholder="บ้านเลขที่ ซอย ถนน ฯลฯ"
+            className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
+          />
+        </div>
+
+        {/* แขวง/ตำบล + Suggest */}
+        <div className="col-span-2 flex flex-col relative" ref={suggestRef}>
+          <label className="text-sm font-medium text-gray-700 mb-1">แขวง/ตำบล</label>
+          <input
+            type="text"
+            value={shippingInfo.subdistrict}
+            onChange={(e) => {
+              const val = e.target.value;
+              setShippingInfo({ ...shippingInfo, subdistrict: val });
+
+              if (val.length > 1) {
+                const filtered = allAddresses.filter((addr) =>
+                  addr.subdistrict.toLowerCase().includes(val.toLowerCase())
+                );
+                setSuggestions(filtered.slice(0, 10));
+              } else {
+                setSuggestions([]);
+              }
+            }}
+            className="border rounded px-3 py-2 w-full focus:outline-yellow-500"
+          />
+          {suggestions.length > 0 && (
+            <ul
+              className="absolute top-full left-0 w-full z-30 bg-white border border-gray-300 mt-1 rounded shadow max-h-40 overflow-auto"
+            >
+              {suggestions.map((addr, i) => (
+                <li
+                  key={i}
+                  onClick={() => {
+                    setShippingInfo({
+                      ...shippingInfo,
+                      subdistrict: addr.subdistrict,
+                      district: addr.district,
+                      province: addr.province,
+                      postalCode: addr.zipcode,
+                    });
+                    setSuggestions([]);
+                  }}
+                  className="p-2 hover:bg-yellow-100 cursor-pointer text-sm"
+                >
+                  {addr.subdistrict}, {addr.district}, {addr.province}, {addr.zipcode}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* เขต / จังหวัด / รหัสไปรษณีย์ */}
+        {(["district", "province", "postalCode"] as const).map((key) => (
+          <div key={key} className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              {key === "district" ? "เขต/อำเภอ" : key === "province" ? "จังหวัด" : "รหัสไปรษณีย์"}
+            </label>
+            <input
+              type="text"
+              value={shippingInfo[key]}
+              readOnly
+              className="border rounded px-3 py-2 w-full bg-gray-100"
+            />
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={handleSaveShipping}
+        className="mt-6 w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded flex items-center justify-center gap-2 font-semibold"
+      >
+        <Save className="w-5 h-5" />
+        บันทึกที่อยู่
+      </button>
+    </dialog>
+
+    {/* ✅ แก้จุดที่ยังใช้ city → เปลี่ยนเป็น district */}
+    <div className="bg-white p-4 rounded shadow mb-4 border border-yellow-400 relative">
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="flex items-center text-lg font-semibold text-yellow-600 mb-1">
+            <MapPinHouse className="w-5 h-5 mr-2" />
+            ที่อยู่ในการจัดส่ง
           </h2>
+
+        </div>
+        <div className="flex flex-col items-end gap-2 mb-4">
+          
           <button
-            className="bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-4 py-2 rounded"
             onClick={() => {
               setSelectedAddressId(null);
-              setShippingInfo({
-                Name: "",
-                label: "",
-                addressLine: "",
-                district: "",
-                province: "",
-                postalCode: "",
-                subDistrict: "",
-                country: "Thailand",
-                phone: "",
-              });
+              setShippingInfo(defaultShippingInfo);
               modalRef.current?.showModal();
             }}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-4 py-1 rounded"
           >
             เพิ่มที่อยู่ใหม่
           </button>
         </div>
-
-        {addressList.length > 0 ? (
-          <>
-            <select
-              value={selectedAddressId || ""}
-              onChange={(e) => {
-                const addr = addressList.find((a) => a._id === e.target.value);
-                if (addr) {
-                  setSelectedAddressId(addr._id);
-                  setShippingInfo({
-                    Name: addr.Name,
-                    label: addr.label,
-                    addressLine: addr.addressLine,
-                    district: addr.district,
-                    province: addr.province,
-                    postalCode: addr.postalCode,
-                    subDistrict: addr.subDistrict,
-                    country: addr.country,
-                    phone: addr.phone,
-                  });
-                }
-              }}
-              className="w-full border rounded px-3 py-2 mb-2"
-            >
-              {addressList.map((addr) => (
-                <option key={addr._id} value={addr._id}>
-                  ชื่อผู้รับ : {addr.Name} บ้านเลขที่ : {addr.addressLine} ,{" "}
-                  {addr.district} , {addr.province} {addr.postalCode}
-                </option>
-              ))}
-            </select>
-            <button
-              className="bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-4 py-2 rounded"
-              onClick={() => modalRef.current?.showModal()}
-            >
-              แก้ไขที่อยู่นี้
-            </button>
-          </>
-        ) : (
-          <p className="text-red-500 text-sm">
-            ⚠ กรุณาเพิ่มที่อยู่จัดส่งก่อนทำการสั่งซื้อ
-          </p>
-        )}
       </div>
+
+      {showAddressModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg w-full max-w-xl p-6 max-h-[80vh] overflow-y-auto relative shadow-lg">
+            <h3 className="text-lg font-semibold text-brown-800 mb-4">เลือกที่อยู่ของคุณ</h3>
+
+            <div className="space-y-4">
+              {addressList.map((addr) => (
+                <label
+                  key={addr._id}
+                  className={`border rounded-lg p-3 flex justify-between items-start cursor-pointer transition
+                    ${selectedAddressId === addr._id ? "border-yellow-500 bg-yellow-50" : "hover:border-yellow-300"}`}
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-brown-800">{addr.Name} <span className="text-gray-600">({addr.phone})</span></p>
+                    <p className="text-sm text-gray-700">
+                      {addr.addressLine}, {addr.subdistrict}, {addr.district}, {addr.province} {addr.postalCode}
+                    </p>
+                  </div>
+                  <input
+                    type="radio"
+                    checked={selectedAddressId === addr._id}
+                    onChange={() => {
+                      setSelectedAddressId(addr._id);
+                      setShippingInfo({ ...addr });
+                    }}
+                    className="accent-yellow-500 mt-1"
+                  />
+                </label>
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center mt-6">
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => setShowAddressModal(false)}
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={() => setShowAddressModal(false)}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-5 py-2 rounded"
+              >
+                ยืนยัน
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {addressList.length === 0 ? (
+        <p className="text-red-500 text-sm">⚠ กรุณาเพิ่มที่อยู่ก่อนทำการสั่งซื้อ</p>
+      ) : (
+        <div className="space-y-3">
+          {addressList.map((addr) => (
+            <label
+              key={addr._id}
+              className={`border rounded-lg p-3 cursor-pointer flex justify-between items-start transition 
+                ${selectedAddressId === addr._id ? "border-yellow-500 bg-yellow-50" : "hover:border-yellow-300"}`}
+            >
+              <div className="flex-1">
+                <p className="font-semibold text-brown-800">{addr.Name}</p>
+                <p className="text-sm text-gray-600">
+                  {addr.addressLine}, {addr.subdistrict}, {addr.district}, {addr.province} {addr.postalCode}
+                </p>
+                <p className="text-sm text-gray-500">เบอร์: {addr.phone}</p>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <input
+                  type="radio"
+                  name="selectedAddress"
+                  checked={selectedAddressId === addr._id}
+                  onChange={() => {
+                    setSelectedAddressId(addr._id);
+                    setShippingInfo({ ...addr });
+                  }}
+                  className="accent-yellow-500 mt-1"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setSelectedAddressId(addr._id);
+                      setShippingInfo({ ...addr });
+                      modalRef.current?.showModal();
+                    }}
+                    className="text-yellow-600 hover:underline text-xs"
+                  >
+                    แก้ไข
+                  </button>
+                  <p>/</p>
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      const result = await Swal.fire({
+                      title: 'ยืนยันการลบที่อยู่',
+                      text: 'คุณต้องการลบที่อยู่นี้ใช่หรือไม่?',
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonColor: '#ef4444',
+                      cancelButtonColor: '#6b7280',
+                      confirmButtonText: 'ลบที่อยู่',
+                      cancelButtonText: 'ยกเลิก'
+                      });
+
+                      if (result.isConfirmed) {
+                      try {
+                        await axios.delete(`${getBaseUrl()}/api/user/deleteAddress/${addr._id}`, {
+                        withCredentials: true
+                        });
+                        setAddressList(prev => prev.filter(a => a._id !== addr._id));
+                        toast({ title: "✅ ลบที่อยู่เรียบร้อยแล้ว", duration: 3000 });
+                      } catch (error) {
+                        toast({ title: "❌ ไม่สามารถลบที่อยู่ได้", duration: 3000 });
+                      }
+                      }
+                    }}
+                    className="text-red-600 hover:underline text-xs"
+                    >
+                    ลบ
+                  </button>
+                </div>
+              </div>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
 
       {/* รายการสินค้า */}
       <div className="bg-white p-4 rounded shadow mb-4">

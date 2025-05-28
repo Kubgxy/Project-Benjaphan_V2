@@ -19,6 +19,7 @@ const shippingInfoSchema = new mongoose.Schema({
   label: { type: String },            // เช่น "บ้าน", "ออฟฟิศ"
   addressLine: { type: String },
   district: { type: String },
+  subdistrict: { type: String },      // เช่น "แขวง", "ตำบล"
   province: { type: String },
   postalCode: { type: String },
   country: { type: String, default: "Thailand" }

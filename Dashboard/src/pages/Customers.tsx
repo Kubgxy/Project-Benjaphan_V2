@@ -446,7 +446,7 @@ const Customers = () => {
                         </p>
                         <p>
                           <span className="font-semibold">Sub District:</span>{" "}
-                          {selectedCustomer.addresses[0].subDistrict}
+                          {selectedCustomer.addresses[0].subdistrict}
                         </p>
                       </div>
                       <div>

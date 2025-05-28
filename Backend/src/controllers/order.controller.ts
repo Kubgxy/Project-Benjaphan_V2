@@ -105,7 +105,7 @@ export const createOrder = async (req: Request, res: Response) => {
         district: shippingInfo.district,
         province: shippingInfo.province,
         postalCode: shippingInfo.postalCode,
-        subDistrict: shippingInfo.subDistrict,
+        subdistrict: shippingInfo.subdistrict,
         country: shippingInfo.country || "Thailand",
         phone: shippingInfo.phone,
       },

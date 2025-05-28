@@ -82,7 +82,7 @@ type Order = {
     district: string;
     province: string;
     postalCode: string;
-    subDistrict: string;
+    subdistrict: string;
     country: string;
     phone: string;
   };
@@ -570,7 +570,7 @@ const Orders = () => {
                   {selectedOrder.shippingInfo.label},{" "}
                   {selectedOrder.shippingInfo.addressLine},{" "}
                   {selectedOrder.shippingInfo.district},{" "}
-                  {selectedOrder.shippingInfo.subDistrict},{" "}
+                  {selectedOrder.shippingInfo.subdistrict},{" "}
                   {selectedOrder.shippingInfo.province},{" "}
                   {selectedOrder.shippingInfo.postalCode}{" "}
                   {selectedOrder.shippingInfo.country}

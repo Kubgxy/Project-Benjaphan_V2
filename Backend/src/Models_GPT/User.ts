@@ -5,6 +5,7 @@ const addressSchema = new mongoose.Schema({
   label: { type: String },                      // เช่น "บ้าน", "ออฟฟิศ"
   addressLine: { type: String },               // ที่อยู่เต็มบรรทัด
   district: { type: String },
+  subdistrict: { type: String },                // เช่น "แขวง", "ตำบล"
   province: { type: String },
   postalCode: { type: String },
   country: { type: String, default: "Thailand" },

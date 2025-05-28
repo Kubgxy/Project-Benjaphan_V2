@@ -89,16 +89,16 @@ export interface Brand {
 }
 
 export interface ShippingInfo {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  address: string
+  _id?: string
+  Name: string
+  label: string
+  addressLine: string
   district: string
   subdistrict: string
-  state: string
+  province: string
   postalCode: string
   country: string
+  phone: string
 }
 
 export interface PaymentInfo {
@@ -132,3 +132,32 @@ export interface Order {
   createdAt: string
 }
 
+export interface Address {
+  subdistrict: string;
+  district: string;
+  province: string;
+  zipcode: string;
+}
+
+export interface District {
+  DISTRICT_ID: number;
+  DISTRICT_NAME: string;
+  PROVINCE_ID: number;
+}
+
+export interface Province {
+  PROVINCE_ID: number;
+  PROVINCE_NAME: string;
+}
+
+export interface SubDistrict {
+  SUB_DISTRICT_NAME: string;
+  SUB_DISTRICT_CODE: string;
+  DISTRICT_ID: number;
+  PROVINCE_ID: number;
+}
+
+export interface Zipcode {
+  SUB_DISTRICT_CODE: string;
+  ZIPCODE: string;
+}
