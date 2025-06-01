@@ -125,7 +125,6 @@ const Products: React.FC = () => {
 
   const sensors = useSensors(useSensor(PointerSensor));
 
-
   const fetchProducts = async () => {
     try {
       const response = await axios.get(
@@ -227,14 +226,10 @@ const Products: React.FC = () => {
           formData.append("images", image.value as File);
         });
 
-      await axios.post(
-        `${getBaseUrl()}/api/product/addProducts`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true,
-        }
-      );
+      await axios.post(`${getBaseUrl()}/api/product/addProducts`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
+      });
 
       toast({ title: "✅ เพิ่มสินค้าสำเร็จ!" });
       setAddDialogOpen(false);
@@ -393,8 +388,64 @@ const Products: React.FC = () => {
     }
   };
 
-  const handleExportCsv = () => {
-    toast({ title: "CSV Export ยังไม่ทำ" });
+  const exportAllProductsToCSV = () => {
+    if (products.length === 0) return;
+
+    const headers = [
+      "รหัสสินค้า",
+      "ชื่อสินค้า",
+      "หมวดหมู่",
+      "ราคา",
+      "ราคาลด",
+      "ส่วนลด (%)",
+      "คงเหลือ",
+      "ขนาดทั้งหมด",
+      "สถานะ",
+      "แท็ก",
+    ];
+
+    const rows = products.map((product) => {
+      const stock = calculateStock(product.availableSizes);
+      const sizesText = product.availableSizes
+        .map((s) => `${s.size}:${s.quantity}`)
+        .join(" / ");
+      const status = stock > 0 ? "เปิดใช้งาน" : "ปิดใช้งาน";
+
+      const tags = [];
+      if (product.isNewArrival) tags.push("ใหม่");
+      if (product.isBestseller) tags.push("ขายดี");
+      if (product.isOnSale) tags.push("ลดราคา");
+
+      return [
+        product.id_product,
+        product.name,
+        product.category,
+        product.price,
+        product.salePrice || "-",
+        product.discount || "-",
+        stock,
+        sizesText,
+        status,
+        tags.join(", "),
+      ];
+    });
+
+    const csvContent =
+      "\uFEFF" +
+      headers.join(",") +
+      "\n" +
+      rows.map((row) => row.join(",")).join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "products.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const uniqueCategories = Array.from(new Set(products.map((p) => p.category)));
@@ -404,17 +455,6 @@ const Products: React.FC = () => {
       <div className="space-y-4 animate-fade-in">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold tracking-tight">สินค้า</h1>
-          <Button
-            className="flex items-center"
-            onClick={() => {
-              resetNewProduct();
-              setIsEditMode(false);
-              setAddDialogOpen(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            เพิ่มสินค้า
-          </Button>
         </div>
 
         <div className="grid gap-4 md:grid-cols-4">
@@ -474,10 +514,29 @@ const Products: React.FC = () => {
                 รายการ
               </span>
             </div>
-            <Button variant="outline" size="sm" onClick={handleExportCsv}>
-              <FileDown className="mr-2 h-4 w-4" />
-              ส่งออก
-            </Button>
+
+            <div className="flex gap-2">
+              <Button
+                className="flex items-center"
+                onClick={exportAllProductsToCSV}
+                variant="outline"
+              >
+                <FileDown className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+
+              <Button
+                className="flex items-center"
+                onClick={() => {
+                  resetNewProduct();
+                  setIsEditMode(false);
+                  setAddDialogOpen(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                เพิ่มสินค้า
+              </Button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -1090,9 +1149,7 @@ const Products: React.FC = () => {
                                   imageUrl={
                                     item.type === "file"
                                       ? URL.createObjectURL(item.value as File)
-                                      : `${getBaseUrl()}${
-                                          item.value as string
-                                        }`
+                                      : `${getBaseUrl()}${item.value as string}`
                                   }
                                   onRemove={(idx) => {
                                     const updated = combinedImages.filter(

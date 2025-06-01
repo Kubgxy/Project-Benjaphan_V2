@@ -31,11 +31,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Eye, Copy } from "lucide-react";
+import { Eye, Copy, Download } from "lucide-react";
 import { getBaseUrl } from "@/lib/api";
 import Swal from "sweetalert2";
 import { th } from "date-fns/locale";
-
 
 type OrderStatus =
   | "pending"
@@ -98,6 +97,8 @@ const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [carrier, setCarrier] = useState("");
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterDate, setFilterDate] = useState<string>("all"); // all / YYYY-MM-DD
@@ -162,21 +163,15 @@ const Orders = () => {
     fetchOrders();
   }, [toast]);
 
-  const refreshOrderData = async (orderId: string) => {
-    try {
-      const res = await axios.get(
-        `${getBaseUrl()}/api/order/getOrderById/${orderId}`,
-        {
-          withCredentials: true,
-        }
-      );
-      if (res.data.success) {
-        setSelectedOrder(res.data.order); // ✅ set ตัวล่าสุดที่ได้จาก backend
-      }
-    } catch (err) {
-      console.error("❌ Failed to refresh order:", err);
+  useEffect(() => {
+    if (selectedOrder?.deliveryTracking) {
+      setTrackingNumber(selectedOrder.deliveryTracking.trackingNumber || "");
+      setCarrier(selectedOrder.deliveryTracking.carrier || "");
+    } else {
+      setTrackingNumber("");
+      setCarrier("");
     }
-  };
+  }, [selectedOrder]);
 
   // ✅ handle เปลี่ยนสถานะ orderStatus
   const handleStatusChange = async (
@@ -186,48 +181,17 @@ const Orders = () => {
     setIsLoading(true);
 
     try {
+      // ✅ กรณี "shipped" → ใช้ค่าจาก state และตรวจสอบก่อนส่ง
       if (newStatus === "shipped") {
-        // ✅ ปิด Dialog ก่อนเรียก Swal
-        setShowOrderDetails(false);
-        await new Promise((resolve) => setTimeout(resolve, 200)); // หน่วงรอ Dialog ปิด
-
-        // 👉 Step 1: ขอเลขพัสดุ
-        const { value: trackingNumber } = await Swal.fire({
-          title: "ใส่เลขพัสดุ",
-          input: "text",
-          inputLabel: "เลขพัสดุ",
-          inputPlaceholder: "เช่น TH1234567890",
-          showCancelButton: true,
-          inputValidator: (value) => {
-            if (!value) return "กรุณากรอกเลขพัสดุ";
-          },
-        });
-
-        if (!trackingNumber) {
-          setIsLoading(false);
-          setShowOrderDetails(true); // เปิด Dialog กลับ
+        if (!trackingNumber || !carrier) {
+          toast({
+            title: "กรุณากรอกข้อมูลให้ครบ",
+            description: "ทั้งเลขพัสดุและบริษัทขนส่งต้องไม่ว่าง",
+            variant: "destructive",
+          });
           return;
         }
 
-        // 👉 Step 2: ขอชื่อบริษัทขนส่ง
-        const { value: carrier } = await Swal.fire({
-          title: "ใส่บริษัทขนส่ง",
-          input: "text",
-          inputLabel: "บริษัทขนส่ง",
-          inputPlaceholder: "เช่น Kerry, Flash",
-          showCancelButton: true,
-          inputValidator: (value) => {
-            if (!value) return "กรุณากรอกชื่อบริษัทขนส่ง";
-          },
-        });
-
-        if (!carrier) {
-          setIsLoading(false);
-          setShowOrderDetails(true);
-          return;
-        }
-
-        // ✅ ส่งไป backend
         const res = await axios.patch(
           `${getBaseUrl()}/api/order/updateStatus/${orderId}`,
           {
@@ -248,11 +212,10 @@ const Orders = () => {
           toast({ title: "Error", description: res.data.message });
         }
 
-        setShowOrderDetails(true); // ✅ เปิด Dialog กลับ
         return;
       }
 
-      // ✅ กรณีอื่น
+      // ✅ กรณีสถานะอื่น ๆ (confirmed, delivered, cancelled)
       const res = await axios.patch(
         `${getBaseUrl()}/api/order/updateStatus/${orderId}`,
         { status: newStatus },
@@ -284,6 +247,46 @@ const Orders = () => {
     setShowOrderDetails(true);
   };
 
+  const exportAllOrdersToCSV = () => {
+    const headers = [
+      "Order ID",
+      "วันที่สั่งซื้อ",
+      "สถานะ",
+      "ผู้สั่งซื้อ",
+      "เบอร์โทร",
+      "ยอดรวม (บาท)",
+    ];
+
+    const rows = orders.map((order) => [
+      order._id,
+      format(new Date(order.createdAt), "dd/MM/yyyy"),
+      order.orderStatus,
+      `${order.userId.firstName} ${order.userId.lastName}`,
+      `="${order.shippingInfo.phone}"`,
+      `"฿${order.total.toLocaleString()}"`, // 👈 ครอบด้วย double quote
+    ]);
+
+    const csvContent =
+      "\uFEFF" +
+      headers.join(",") +
+      "\n" +
+      rows.map((row) => row.join(",")).join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "orders.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+
+
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">ออเดอร์ทั้งหมด</h1>
@@ -314,6 +317,7 @@ const Orders = () => {
             <div className="text-sm text-muted-foreground mb-1">
               กำลังจัดส่ง
             </div>
+
             <div className="text-2xl font-bold text-blue-600">
               {orders.filter((o) => o.orderStatus === "shipped").length}
             </div>
@@ -361,7 +365,7 @@ const Orders = () => {
           </SelectContent>
         </Select>
 
-        <div className="flex gap-4 flex-wrap">
+        <div className="flex  gap-4 flex-wrap">
           {/* เรียงตามวัน */}
           <Select value={sortByDate} onValueChange={setSortByDate}>
             <SelectTrigger className="w-[200px]">
@@ -385,6 +389,15 @@ const Orders = () => {
               <SelectItem value="price-asc">ราคาต่ำ - สูง</SelectItem>
             </SelectContent>
           </Select>
+
+          <Button
+            className="ml-[400px] flex items-center justify-center gap-2"
+            onClick={exportAllOrdersToCSV}
+            variant="outline"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
         </div>
       </div>
 
@@ -427,7 +440,7 @@ const Orders = () => {
                 <TableRow key={order._id}>
                   <TableCell>{order._id}</TableCell>
                   <TableCell>
-                    {format(new Date(order.createdAt), "d MMM yyyy",{
+                    {format(new Date(order.createdAt), "d MMM yyyy", {
                       locale: th,
                     })}
                   </TableCell>
@@ -467,90 +480,139 @@ const Orders = () => {
         {selectedOrder && (
           <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto p-6">
             <DialogHeader className="mb-4 border-b pb-3">
-              <DialogTitle className="text-xl font-bold">
-                เลขคำสั่งซื้อ:{" "}
-                <span className="break-all text-blue-600">
-                  {selectedOrder._id}
-                </span>
-              </DialogTitle>
-              <DialogDescription className="text-sm text-gray-500">
-                สั่งซื้อวันที่:{" "}
-                {format(new Date(selectedOrder.createdAt), "dd MMM yyyy")}
-              </DialogDescription>
+              <div className="flex items-center justify-between flex-wrap pt-5 gap-4">
+                {/* ✅ ฝั่งซ้าย: ชื่อออเดอร์ + วันที่ */}
+                <div>
+                  <DialogTitle className="text-xl font-bold">
+                    เลขคำสั่งซื้อ:{" "}
+                    <span className="break-all text-blue-600">
+                      {selectedOrder._id}
+                    </span>
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-gray-500">
+                    สั่งซื้อวันที่:{" "}
+                    {format(new Date(selectedOrder.createdAt), "dd MMM yyyy")}
+                  </DialogDescription>
+                </div>
+
+               
+              </div>
             </DialogHeader>
 
             <div className="space-y-6">
               {/* ✅ สถานะ */}
-              <div className="flex flex-wrap items-center gap-4">
-                <span className="font-semibold text-lg">สถานะ:</span>
-                <Badge
-                  className={
-                    statusColors[selectedOrder.orderStatus as OrderStatus]
-                  }
-                >
-                  {selectedOrder.orderStatus}
-                </Badge>
+              <div className="space-y-4">
+                {/* แสดงสถานะ + ปุ่มแนวนอน */}
+                <div className="flex flex-wrap items-center gap-4">
+                  <span className="font-semibold text-lg">สถานะ:</span>
+                  <Badge
+                    className={`text-lg px-4 py-1 rounded-full ${
+                      statusColors[selectedOrder.orderStatus as OrderStatus]
+                    }`}
+                  >
+                    {selectedOrder.orderStatus}
+                  </Badge>
 
-                {/* ปุ่มดำเนินการต่อ */}
+                  {/* ปุ่มยืนยันสถานะ */}
+                  {(() => {
+                    let nextAction: OrderStatus | null = null;
+                    if (selectedOrder.orderStatus === "pending")
+                      nextAction = "confirmed";
+                    else if (selectedOrder.orderStatus === "confirmed")
+                      nextAction = "shipped";
+                    else if (selectedOrder.orderStatus === "shipped")
+                      nextAction = "delivered";
+
+                    const isPaymentPaid =
+                      selectedOrder.payment?.status === "paid";
+                    const requirePaid =
+                      (nextAction === "shipped" ||
+                        nextAction === "delivered") &&
+                      !isPaymentPaid;
+
+                    if (requirePaid) {
+                      return (
+                        <Button
+                          disabled
+                          className="bg-gray-400 text-white cursor-not-allowed"
+                        >
+                          ต้องยืนยันการชำระเงินก่อน
+                        </Button>
+                      );
+                    }
+
+                    if (
+                      nextAction === "confirmed" ||
+                      nextAction === "delivered"
+                    ) {
+                      return (
+                        <Button
+                          onClick={() =>
+                            handleStatusChange(selectedOrder._id, nextAction)
+                          }
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {nextAction === "confirmed" && "ยืนยันคำสั่งซื้อ"}
+                          {nextAction === "delivered" && "จัดส่งสำเร็จ"}
+                        </Button>
+                      );
+                    }
+
+                    return null;
+                  })()}
+
+                  {/* ปุ่มยกเลิกคำสั่งซื้อ */}
+                  {(selectedOrder.orderStatus === "pending" ||
+                    selectedOrder.orderStatus === "confirmed") && (
+                    <Button
+                      variant="destructive"
+                      onClick={() =>
+                        handleStatusChange(selectedOrder._id, "cancelled")
+                      }
+                    >
+                      ยกเลิกคำสั่งซื้อ
+                    </Button>
+                  )}
+                </div>
+
+                {/* ฟอร์มกรอกข้อมูลจัดส่ง (เฉพาะเมื่อจะเปลี่ยนเป็น shipped) */}
                 {(() => {
-                  let nextAction: OrderStatus | null = null;
-                  if (selectedOrder.orderStatus === "pending")
-                    nextAction = "confirmed";
-                  else if (selectedOrder.orderStatus === "confirmed")
-                    nextAction = "shipped";
-                  else if (selectedOrder.orderStatus === "shipped")
-                    nextAction = "delivered";
+                  const nextAction =
+                    selectedOrder.orderStatus === "confirmed"
+                      ? "shipped"
+                      : null;
 
-                  const isPaymentPaid =
-                    selectedOrder.payment?.status === "paid";
-                  const requirePaid =
-                    (nextAction === "shipped" || nextAction === "delivered") &&
-                    !isPaymentPaid;
-
-                  if (nextAction && !requirePaid) {
+                  if (nextAction === "shipped") {
                     return (
-                      <Button
-                        onClick={() =>
-                          handleStatusChange(
-                            selectedOrder._id,
-                            nextAction as OrderStatus
-                          )
-                        }
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        {nextAction === "confirmed" && "ยืนยันคำสั่งซื้อ"}
-                        {nextAction === "shipped" && "กำลังจัดส่ง"}
-                        {nextAction === "delivered" && "จัดส่งสำเร็จ"}
-                      </Button>
-                    );
-                  }
+                      <div className="w-full space-y-3">
+                        <div className="grid gap-2 md:grid-cols-2">
+                          <Input
+                            placeholder="เลขพัสดุ เช่น TH1234567890"
+                            value={trackingNumber}
+                            onChange={(e) => setTrackingNumber(e.target.value)}
+                          />
+                          <Input
+                            placeholder="บริษัทขนส่ง เช่น Kerry, Flash"
+                            value={carrier}
+                            onChange={(e) => setCarrier(e.target.value)}
+                          />
+                        </div>
 
-                  if (requirePaid) {
-                    return (
-                      <Button
-                        disabled
-                        className="bg-gray-400 text-white cursor-not-allowed"
-                      >
-                        ต้องยืนยันการชำระเงินก่อน
-                      </Button>
+                        <Button
+                          onClick={() =>
+                            handleStatusChange(selectedOrder._id, "shipped")
+                          }
+                          className="bg-blue-500 hover:bg-blue-700 text-white"
+                          disabled={!trackingNumber || !carrier || isLoading}
+                        >
+                          ยืนยันจัดส่งสินค้า
+                        </Button>
+                      </div>
                     );
                   }
 
                   return null;
                 })()}
-
-                {/* ปุ่มยกเลิก */}
-                {(selectedOrder.orderStatus === "pending" ||
-                  selectedOrder.orderStatus === "confirmed") && (
-                  <Button
-                    variant="destructive"
-                    onClick={() =>
-                      handleStatusChange(selectedOrder._id, "cancelled")
-                    }
-                  >
-                    ยกเลิกคำสั่งซื้อ
-                  </Button>
-                )}
               </div>
 
               {/* ✅ ข้อมูลลูกค้า */}
@@ -691,7 +753,9 @@ const Orders = () => {
               {/* ✅ สลิปการชำระเงิน */}
               {selectedOrder.payment.slipImage && (
                 <div>
-                  <h3 className="font-semibold mb-2 text-lg">Payment Slip</h3>
+                  <h3 className="font-semibold mb-2 text-lg">
+                    Payment Slip หลักฐานการโอนเงิน
+                  </h3>
                   <a
                     href={`${getBaseUrl()}${selectedOrder.payment.slipImage}`}
                     target="_blank"

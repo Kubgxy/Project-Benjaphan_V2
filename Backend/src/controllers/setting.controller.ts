@@ -86,3 +86,68 @@ export const updateHomepageContent = async (req: Request, res: Response) => {
       .json({ success: false, message: "เกิดข้อผิดพลาด", error: err });
   }
 };
+
+export const getCheckoutContent = async (req: Request, res: Response) => {
+  try {
+    const content = await SiteContent.findOne();
+    if (!content) {
+      res.status(404).json({ success: false, message: "ยังไม่มีข้อมูล Checkout" });
+      return 
+    }
+
+    const checkout = content.pages.find((page) => page.name === "checkoutpage");
+    if (!checkout) {
+      res.status(404).json({ success: false, message: "ยังไม่มีหน้า checkoutpage" });
+      return 
+    }
+
+    res.status(200).json({ success: true, checkout: checkout.fields });
+    return 
+  } catch (err) {
+    console.error("Error fetching checkout content:", err);
+    res.status(500).json({ success: false, error: err });
+    return 
+  }
+};
+
+export const updateCheckoutContent = async (req: Request, res: Response) => {
+  try {
+    const { bankName, accountNumber, accountName } = req.body;
+    const qrImage = req.file?.path;
+
+    const newFields: any = {};
+    if (bankName) newFields.bankName = bankName;
+    if (accountNumber) newFields.accountNumber = accountNumber;
+    if (accountName) newFields.accountName = accountName;
+    if (qrImage) newFields.qrImage = qrImage;
+
+    const content = await SiteContent.findOne();
+
+    if (!content) {
+      const created = await SiteContent.create({
+        pages: [{ name: "checkoutpage", fields: newFields }],
+      });
+      res.status(200).json({ success: true, checkout: newFields });
+      return 
+    }
+
+    const pageIndex = content.pages.findIndex((p) => p.name === "checkoutpage");
+
+    if (pageIndex !== -1) {
+      content.pages[pageIndex].fields = {
+        ...content.pages[pageIndex].fields,
+        ...newFields,
+      };
+    } else {
+      content.pages.push({ name: "checkoutpage", fields: newFields });
+    }
+
+    await content.save();
+    res.status(200).json({ success: true, checkout: newFields });
+    return 
+  } catch (err) {
+    console.error("Error updating checkout content:", err);
+    res.status(500).json({ success: false, error: err });
+    return 
+  }
+};

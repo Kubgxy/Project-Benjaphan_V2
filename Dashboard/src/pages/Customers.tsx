@@ -121,16 +121,54 @@ const Customers = () => {
   };
 
   const exportToCSV = () => {
-    toast({
-      title: "Export Started",
-      description: "Your CSV file is being generated.",
-    });
-    setTimeout(() => {
+    if (sortedCustomers.length === 0) {
       toast({
-        title: "Export Complete",
-        description: "Your CSV file is ready for download.",
+        title: "ไม่มีข้อมูล",
+        description: "ไม่มีลูกค้าที่สามารถ export ได้",
+        variant: "destructive",
       });
-    }, 1500);
+      return;
+    }
+
+    const headers = [
+      "ID",
+      "ชื่อ",
+      "อีเมล",
+      "เบอร์โทร",
+      "วันที่สมัคร",
+      "สถานะ",
+    ];
+
+    const rows = sortedCustomers.map((c) => [
+      c._id,
+      c.fullName,
+      c.email,
+      c.phoneNumber || "-",
+      c.registeredDate ? format(c.registeredDate, "yyyy-MM-dd HH:mm") : "-",
+      c.status === "active" ? "Verified" : "Unverified",
+    ]);
+
+    const csvRows = [
+      headers.join(","), // หัวตาราง
+      ...rows.map((r) => r.map((v) => `"${v}"`).join(",")),
+    ];
+
+    const csvContent = "\uFEFF" + csvRows.join("\n"); // เพิ่ม BOM
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "customers.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "✅ Export เสร็จสิ้น",
+      description: "ไฟล์ CSV พร้อมใช้งานแล้ว",
+    });
   };
 
   const handleViewDetails = (customer: any) => {
@@ -232,18 +270,7 @@ const Customers = () => {
                     <ArrowDown className="inline ml-1 h-4 w-4" />
                   ))}
               </TableHead>
-              <TableHead
-                className="cursor-pointer"
-                onClick={() => handleSort("orders")}
-              >
-                Orders
-                {sortBy === "orders" &&
-                  (sortDirection === "asc" ? (
-                    <ArrowUp className="inline ml-1 h-4 w-4" />
-                  ) : (
-                    <ArrowDown className="inline ml-1 h-4 w-4" />
-                  ))}
-              </TableHead>
+              
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -310,7 +337,6 @@ const Customers = () => {
                         })
                       : "-"}
                   </TableCell>
-                  <TableCell>{customer.ordersCount}</TableCell>
                   <TableCell>
                     <Badge
                       className={

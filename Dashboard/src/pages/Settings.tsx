@@ -98,6 +98,11 @@ const Settings = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
+  const [qrImage, setQrImage] = useState<File | null>(null);
+  const [qrPreview, setQrPreview] = useState("");
 
   // Store settings form
   const storeForm = useForm<z.infer<typeof storeSettingsSchema>>({
@@ -168,6 +173,21 @@ const Settings = () => {
 
   useEffect(() => {
     axios
+      .get(`${getBaseUrl()}/api/setting/getCheckout`)
+      .then((res) => {
+        const content = res.data.checkout;
+        setBankName(content.bankName || "");
+        setAccountNumber(content.accountNumber || "");
+        setAccountName(content.accountName || "");
+        if (content.qrImage) {
+          setQrPreview(`${getBaseUrl()}/${content.qrImage}`);
+        }
+      })
+      .catch((err) => console.error("โหลดข้อมูลชำระเงินล้มเหลว", err));
+  }, []);
+
+  useEffect(() => {
+    axios
       .get(`${getBaseUrl()}/api/user/getUserProfile`, { withCredentials: true })
       .then((res) => {
         const user = res.data.user;
@@ -216,6 +236,42 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Something went wrong while updating homepage.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSavePayment = async () => {
+    try {
+      setIsLoading(true);
+      const formData = new FormData();
+      formData.append("bankName", bankName);
+      formData.append("accountNumber", accountNumber);
+      formData.append("accountName", accountName);
+      if (qrImage) formData.append("QrImage", qrImage);
+
+      const res = await axios.post(
+        `${getBaseUrl()}/api/setting/updateCheckout`,
+        formData,
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      toast({
+        title: "อัปเดตสำเร็จ",
+        description: "บันทึกข้อมูลชำระเงินเรียบร้อยแล้ว",
+      });
+
+      setQrPreview(`${getBaseUrl()}/${res.data.checkout.qrImage}`);
+    } catch (err) {
+      console.error("บันทึกไม่สำเร็จ", err);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถบันทึกข้อมูลได้",
         variant: "destructive",
       });
     } finally {
@@ -294,8 +350,9 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="store" className="space-y-6">
-        <TabsList className="grid grid-cols-3 max-w-md">
+        <TabsList className="grid grid-cols-4 max-w-md">
           <TabsTrigger value="store">Store</TabsTrigger>
+          <TabsTrigger value="payment">Payment</TabsTrigger>
           <TabsTrigger value="admin">Admin Info</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
@@ -373,6 +430,79 @@ const Settings = () => {
               >
                 <Save className="mr-2 w-4 h-4" />
                 {isLoading ? "Saving..." : "Save Homepage"}
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payment">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Information</CardTitle>
+              <CardDescription>
+                ตั้งค่าเลขบัญชี และ QR Code สำหรับการชำระเงิน
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* แสดง QR Code */}
+              {qrPreview && (
+                <img
+                  src={qrPreview}
+                  alt="QR Preview"
+                  className="rounded-lg max-h-48 object-contain"
+                />
+              )}
+
+              <div>
+                <Label>QR Code Image</Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setQrImage(file);
+                      setQrPreview(URL.createObjectURL(file));
+                    }
+                  }}
+                />
+              </div>
+
+              <div>
+                <Label>Bank Name</Label>
+                <Input
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  placeholder="เช่น ไทยพาณิชย์"
+                />
+              </div>
+
+              <div>
+                <Label>Account Number</Label>
+                <Input
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  placeholder="เช่น 123-456-7890"
+                />
+              </div>
+
+              <div>
+                <Label>Account Name</Label>
+                <Input
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                  placeholder="เช่น บริษัท เบญจภัณฑ์ จำกัด"
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button
+                onClick={handleSavePayment}
+                disabled={isLoading}
+                className="ml-auto"
+              >
+                <Save className="mr-2 w-4 h-4" />
+                {isLoading ? "Saving..." : "Save Payment Info"}
               </Button>
             </CardFooter>
           </Card>

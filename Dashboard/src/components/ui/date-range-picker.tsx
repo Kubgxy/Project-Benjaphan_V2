@@ -15,6 +15,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 interface DatePickerWithRangeProps {
   className?: string;
+  value?: DateRange | undefined; // ✅ เพิ่ม value
   onChange?: (date: DateRange | undefined) => void;
 }
 

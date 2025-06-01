@@ -13,5 +13,5 @@ export function getBaseUrl() {
 //   if (process.env.NODE_ENV === "development") {
 //     return "http://localhost:3000";
 //   }
-//   return ""; // ใช้ path สั้น ๆ ใน Production ที่มี NGINX reverse proxy แล้ว
+//   return ""; // สำหรับ production จะปล่อยให้ nginx จัดการ
 // }
