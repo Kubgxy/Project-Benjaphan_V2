@@ -393,27 +393,7 @@ export function CheckoutForm() {
     }
   };
 
-  const handleCopyQR = async () => {
-    const imageUrl = `${getBaseUrl()}/${checkoutBankInfo.qrImage}`;
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-
-      await navigator.clipboard.write([
-        new ClipboardItem({ [blob.type]: blob }),
-      ]);
-
-      toast({
-        title: "✅ คัดลอก QR สําเร็จ",
-        duration: 3000,
-      });
-    } catch (err) {
-      toast({
-        title: "❌ คัดลอกไม่สำเร็จ",
-        duration: 3000,
-      });
-    }
-  };
+ 
 
   if (loading) return <div className="text-center py-12">กำลังโหลด...</div>;
   if (checkoutItems.length === 0)
@@ -831,38 +811,10 @@ export function CheckoutForm() {
       <div className="bg-white p-6 rounded shadow mb-6">
         <h2 className="text-lg font-semibold text-brown-800 mb-4 flex items-center gap-2">
           <QrCode className="w-5 h-5 text-yellow-500" />
-          เลือกวิธีการชำระเงิน
+          การชำระเงิน
         </h2>
 
-        {/* ปุ่มเลือกวิธี */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <button
-            className={`border rounded-lg p-4 transition shadow-sm ${
-              paymentMethod === "online"
-                ? "bg-yellow-100 border-yellow-500"
-                : "bg-gray-50 hover:bg-gray-100"
-            }`}
-            onClick={() => setPaymentMethod("online")}
-          >
-            <div className="flex items-center gap-3">
-              <Banknote className="w-6 h-6 text-yellow-500" />
-              โอนผ่านบัญชีธนาคาร
-            </div>
-          </button>
-          <button
-            className={`border rounded-lg p-4 transition shadow-sm ${
-              paymentMethod === "qr"
-                ? "bg-yellow-100 border-yellow-500"
-                : "bg-gray-50 hover:bg-gray-100"
-            }`}
-            onClick={() => setPaymentMethod("qr")}
-          >
-            <div className="flex items-center gap-3">
-              <QrCode className="w-6 h-6 text-yellow-500" />
-              สแกน QR Code
-            </div>
-          </button>
-        </div>
+
 
         {/* Content ตามที่เลือก */}
         <div className="space-y-4">
@@ -887,7 +839,7 @@ export function CheckoutForm() {
                     className="mx-auto rounded"
                   />
                   <p className="text-sm text-gray-500">
-                    คลิกเพื่อดู QR Code แบบขยาย
+                    คลิกเพื่อดูหรือบักทึก QR Code
                   </p>
                 </div>
               </div>
@@ -1006,19 +958,13 @@ export function CheckoutForm() {
 
             <button
               onClick={handleDownloadQR}
-              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded w-full transition"
+              className="flex items-center justify-center gap-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded w-full transition"
             >
               <Download className="w-5 h-5" />
               ดาวน์โหลด QR Code
             </button>
 
-            <button
-              onClick={handleCopyQR}
-              className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 px-4 rounded w-full transition"
-            >
-              <ClipboardCopy className="w-5 h-5" />
-              คัดลอก QR Code
-            </button>
+            
 
             <button
               onClick={() => setIsQRPreviewOpen(false)}

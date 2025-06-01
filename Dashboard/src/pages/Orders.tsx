@@ -208,7 +208,6 @@ const Orders = () => {
             description: `เปลี่ยนสถานะเป็น ${newStatus}`,
           });
           setSelectedOrder(res.data.order);
-
           fetchOrders();
         } else {
           toast({ title: "Error", description: res.data.message });
@@ -230,6 +229,7 @@ const Orders = () => {
           description: `Order ${orderId} status updated to ${newStatus}`,
         });
         setSelectedOrder(res.data.order);
+        fetchOrders();
       } else {
         toast({ title: "Error", description: res.data.message });
       }

@@ -36,7 +36,7 @@ const orderSchema = new mongoose.Schema({
   shippingInfo: shippingInfoSchema,        // ข้อมูลจัดส่ง
 
   payment: {                               // ข้อมูลการจ่ายเงิน
-    method: { type: String, enum: ['COD', 'credit', 'online'], default: 'COD' },
+    method: { type: String, enum: ['COD', 'credit', 'online'], default: 'online' },
     status: { type: String, enum: ['pending', 'paid', 'failed'], default: 'pending' },
     transactionId: { type: String },
     paidAt: { type: Date },
