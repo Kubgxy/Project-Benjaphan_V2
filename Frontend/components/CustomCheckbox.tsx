@@ -16,7 +16,9 @@ const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
   className = "",
 }) => {
   return (
-    <label className={`inline-flex items-center cursor-pointer select-none ${className}`}>
+    <label
+      className={`inline-flex items-center cursor-pointer select-none ${className}`}
+    >
       <input
         type="checkbox"
         className="peer hidden"
@@ -31,20 +33,18 @@ const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
                    mr-2"
       >
         <svg
-            className="w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition drop-shadow-sm"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          className="w-4 h-4 text-white peer-checked:opacity-100 transition drop-shadow"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-            <polyline points="20 6 9 17 4 12" />
+          <polyline points="20 6 9 17 4 12" />
         </svg>
       </div>
-      {label && (
-        <span className="text-sm text-brown-800">{label}</span>
-      )}
+      {label && <span className="text-sm text-brown-800">{label}</span>}
     </label>
   );
 };

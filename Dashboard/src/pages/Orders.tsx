@@ -135,33 +135,33 @@ const Orders = () => {
       return 0;
     });
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const res = await axios.get(`${getBaseUrl()}/api/order/getAllOrders`, {
-          withCredentials: true,
-        });
-        if (res.data.success) {
-          setOrders(res.data.orders);
-        } else {
-          toast({
-            title: "Error",
-            description: "Failed to fetch orders",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching orders:", error);
+  const fetchOrders = async () => {
+    try {
+      const res = await axios.get(`${getBaseUrl()}/api/order/getAllOrders`, {
+        withCredentials: true,
+      });
+      if (res.data.success) {
+        setOrders(res.data.orders);
+      } else {
         toast({
           title: "Error",
           description: "Failed to fetch orders",
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch orders",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchOrders();
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     if (selectedOrder?.deliveryTracking) {
@@ -208,6 +208,8 @@ const Orders = () => {
             description: `เปลี่ยนสถานะเป็น ${newStatus}`,
           });
           setSelectedOrder(res.data.order);
+
+          fetchOrders();
         } else {
           toast({ title: "Error", description: res.data.message });
         }
@@ -284,9 +286,6 @@ const Orders = () => {
     document.body.removeChild(link);
   };
 
-
-
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">ออเดอร์ทั้งหมด</h1>
@@ -356,7 +355,7 @@ const Orders = () => {
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="confirmed">Confirmed</SelectItem>
             <SelectItem value="shipped">Shipped</SelectItem>
@@ -405,6 +404,7 @@ const Orders = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>ชื่อผู้สั่ง</TableHead>
               <TableHead>เลขคำสั่งซื้อ</TableHead>
               <TableHead>วันที่สั่งซื้อ</TableHead>
               <TableHead>ราคารวมทั้งหมด</TableHead>
@@ -425,6 +425,9 @@ const Orders = () => {
                       <Skeleton className="h-4 w-24" />
                     </TableCell>
                     <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-4 w-16" />
                     </TableCell>
                     <TableCell>
@@ -438,6 +441,7 @@ const Orders = () => {
             ) : filteredOrders.length > 0 ? (
               filteredOrders.map((order) => (
                 <TableRow key={order._id}>
+                  <TableCell>{order.shippingInfo.Name}</TableCell>
                   <TableCell>{order._id}</TableCell>
                   <TableCell>
                     {format(new Date(order.createdAt), "d MMM yyyy", {
@@ -494,8 +498,6 @@ const Orders = () => {
                     {format(new Date(selectedOrder.createdAt), "dd MMM yyyy")}
                   </DialogDescription>
                 </div>
-
-               
               </div>
             </DialogHeader>
 

@@ -15,6 +15,10 @@ import {
   X,
   QrCode,
   Save,
+  Copy,
+  Download,
+  ClipboardCopy,
+  XCircle,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { getBaseUrl } from "@/lib/api";
@@ -57,6 +61,7 @@ export function CheckoutForm() {
     null
   );
   const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [slipPreview, setSlipPreview] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "qr">("online");
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     Name: "",
@@ -156,7 +161,9 @@ export function CheckoutForm() {
 
       // หากมี preferredId และพบที่อยู่ที่ตรงกัน
       if (preferredId) {
-        const matched = addresses.find((a) => a._id?.toString() === preferredId);
+        const matched = addresses.find(
+          (a) => a._id?.toString() === preferredId
+        );
         if (matched) {
           setSelectedAddressId(matched._id?.toString() || null);
           setShippingInfo({
@@ -229,10 +236,16 @@ export function CheckoutForm() {
   const handleSaveShipping = async () => {
     try {
       setIsSaving(true);
-      if (!shippingInfo.Name || !shippingInfo.addressLine || !shippingInfo.phone || !shippingInfo.subdistrict) {
+      if (
+        !shippingInfo.Name ||
+        !shippingInfo.addressLine ||
+        !shippingInfo.phone ||
+        !shippingInfo.subdistrict
+      ) {
         toast({
           title: "❌ กรุณากรอกข้อมูลให้ครบถ้วน",
-          description: "ชื่อผู้รับ, ที่อยู่, เบอร์โทร, และแขวง/ตำบล จำเป็นต้องระบุ",
+          description:
+            "ชื่อผู้รับ, ที่อยู่, เบอร์โทร, และแขวง/ตำบล จำเป็นต้องระบุ",
           duration: 3000,
         });
         return;
@@ -362,6 +375,46 @@ export function CheckoutForm() {
     }
   };
 
+  const handleDownloadQR = async () => {
+    const imageUrl = `${getBaseUrl()}/${checkoutBankInfo.qrImage}`;
+
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "QrcodeBenjaphan5.jpg";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("ดาวน์โหลด QR ล้มเหลว:", err);
+    }
+  };
+
+  const handleCopyQR = async () => {
+    const imageUrl = `${getBaseUrl()}/${checkoutBankInfo.qrImage}`;
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+
+      await navigator.clipboard.write([
+        new ClipboardItem({ [blob.type]: blob }),
+      ]);
+
+      toast({
+        title: "✅ คัดลอก QR สําเร็จ",
+        duration: 3000,
+      });
+    } catch (err) {
+      toast({
+        title: "❌ คัดลอกไม่สำเร็จ",
+        duration: 3000,
+      });
+    }
+  };
+
   if (loading) return <div className="text-center py-12">กำลังโหลด...</div>;
   if (checkoutItems.length === 0)
     return <div className="text-center py-12">ไม่มีสินค้าในตะกร้า</div>;
@@ -374,9 +427,10 @@ export function CheckoutForm() {
       </h1>
 
       {/* MODAL เพิ่ม/แก้ไขที่อยู่ */}
+
       <dialog
         ref={modalRef}
-        className="rounded-lg p-6 w-full max-w-3xl z-50 bg-white shadow-xl mt-10"
+        className="rounded-lg p-6 w-full max-w-3xl z-50 bg-white shadow-xl"
       >
         <button
           className="absolute top-4 right-4 text-gray-500 hover:text-red-500"
@@ -780,6 +834,7 @@ export function CheckoutForm() {
           เลือกวิธีการชำระเงิน
         </h2>
 
+        {/* ปุ่มเลือกวิธี */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <button
             className={`border rounded-lg p-4 transition shadow-sm ${
@@ -809,93 +864,167 @@ export function CheckoutForm() {
           </button>
         </div>
 
-        {paymentMethod === "online" ? (
-          <div className="space-y-4 text-sm text-gray-700">
-            <div>
-              <p className="font-medium text-lg text-brown-800">
-                ธนาคาร: {checkoutBankInfo.bankName}
-              </p>
-              <p>
-                เลขบัญชี:{" "}
-                <span className="font-medium text-lg">
-                  {checkoutBankInfo.accountNumber}
-                </span>
-              </p>
-              <p>
-                ชื่อบัญชี:{" "}
-                <span className="font-medium text-lg">
-                  {checkoutBankInfo.accountName}
-                </span>
-              </p>
-            
-            </div>
+        {/* Content ตามที่เลือก */}
+        <div className="space-y-4">
+          {(paymentMethod === "qr" || paymentMethod === "online") && (
+            <div className="grid md:grid-cols-2 gap-8 items-start">
+              {/* ซ้าย: QR Code */}
+              <div className="flex justify-center">
+                <div
+                  onClick={() => setIsQRPreviewOpen(true)}
+                  className="bg-white border rounded-xl shadow-md p-5 w-fit cursor-pointer hover:shadow-lg transition text-center space-y-3"
+                >
+                  <QrCode className="w-6 h-6 mx-auto text-yellow-500" />
+                  <Image
+                    src={
+                      checkoutBankInfo.qrImage
+                        ? `${getBaseUrl()}/${checkoutBankInfo.qrImage}`
+                        : "/placeholder.svg"
+                    }
+                    alt="QR Code"
+                    width={220}
+                    height={220}
+                    className="mx-auto rounded"
+                  />
+                  <p className="text-sm text-gray-500">
+                    คลิกเพื่อดู QR Code แบบขยาย
+                  </p>
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                แนบสลิปการโอนเงิน
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files?.length) setSlipFile(e.target.files[0]);
-                }}
-                className="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-yellow-500 file:text-white file:font-semibold hover:file:bg-yellow-600"
-              />
+              {/* ขวา: ข้อมูลบัญชี + แนบสลิป + ปุ่มดูสลิป */}
+              <div className="space-y-4 text-[15px] text-gray-700">
+                <div className="space-y-1">
+                  <p className="font-medium text-base text-brown-800">
+                    ธนาคาร: {checkoutBankInfo.bankName}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    เลขบัญชี:{" "}
+                    <span className="font-medium text-base">
+                      {checkoutBankInfo.accountNumber}
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          checkoutBankInfo.accountNumber || ""
+                        );
+                        toast({
+                          title: "📋 คัดลอกเลขบัญชีแล้ว",
+                          description: checkoutBankInfo.accountNumber,
+                          duration: 2000,
+                        });
+                      }}
+                      className="bg-yellow-300 p-2 rounded-lg text-white  hover:text-black-600 hover:scale-105 hover:bg-yellow-600 transition"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </p>
+
+                  <p>
+                    ชื่อบัญชี:{" "}
+                    <span className="font-medium text-base">
+                      {checkoutBankInfo.accountName}
+                    </span>
+                  </p>
+                </div>
+
+                {/* แนบสลิป */}
+                <div>
+                  <label className="block font-medium text-gray-700 mb-1">
+                    แนบสลิปการโอนเงิน
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files?.length) {
+                        const file = e.target.files[0];
+                        setSlipFile(file);
+                        setSlipPreview(URL.createObjectURL(file));
+                      }
+                    }}
+                    className="block w-fit text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer 
+              file:mr-4 file:py-2 file:px-4 
+              file:border-0 file:bg-yellow-500 file:text-white 
+              file:font-semibold hover:file:bg-yellow-600"
+                  />
+                </div>
+
+                {/* ดูสลิป */}
+                {slipPreview && (
+                  <div className="text-sm">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        Swal.fire({
+                          title: "สลิปที่อัปโหลด",
+                          imageUrl: slipPreview,
+                          imageAlt: "Uploaded Slip",
+                          confirmButtonText: "ปิด",
+                        })
+                      }
+                      className="text-gray-700 underline hover:text-gray-900 flex items-center gap-1"
+                    >
+                      ดูสลิปที่อัปโหลด
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-             <p className="text-red-500 text-md">
-              กรุณาตรวจสอบความถูกต้องของชื่อบัญชี และ ยอดชำระทั้งหมด ก่อนทำรายการ !
-            </p>
-          </div>
-        ) : (
-          <div className="text-center space-y-2">
-            <div
-              onClick={() => setIsQRPreviewOpen(true)}
-              className="cursor-pointer inline-block"
-            >
-              <Image
-                src={
-                  checkoutBankInfo.qrImage
-                    ? `${getBaseUrl()}/${checkoutBankInfo.qrImage}`
-                    : "/placeholder.svg"
-                }
-                alt="QR Code"
-                width={260}
-                height={260}
-                className="mx-auto rounded shadow hover:scale-105 transition"
-              />
-            </div>
-            <p className="text-gray-500 text-lg">
-              สามารถคลิกที่รูปเพื่อดู QR Code
-            </p>
-            <p className="text-red-500 text-md">
-              กรุณาตรวจสอบความถูกต้องของชื่อบัญชี และ ยอดชำระทั้งหมด ก่อนทำรายการ !
-            </p>
-          </div>
-        )}
+          )}
+
+          {/* คำเตือน */}
+          <p className="text-red-500 text-sm text-center">
+            กรุณาตรวจสอบความถูกต้องของชื่อบัญชี และยอดโอนก่อนกดยืนยันการชำระเงิน
+            !
+          </p>
+        </div>
       </div>
 
       {isQRPreviewOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4"
           onClick={() => setIsQRPreviewOpen(false)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white p-4 rounded-lg shadow-lg max-w-3xl w-full"
+            className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md space-y-4"
           >
-            <h3 className="text-center font-semibold mb-4">QR Code ชำระเงิน</h3>
-            <Image
-              src={`${getBaseUrl()}/${checkoutBankInfo.qrImage}`}
-              alt="QR Code Preview"
-              width={700}
-              height={700}
-              className="mx-auto rounded"
-            />
+            <h3 className="text-center text-lg font-semibold text-gray-800">
+              QR Code ชำระเงิน
+            </h3>
+
+            <div className="flex justify-center">
+              <Image
+                src={`${getBaseUrl()}/${checkoutBankInfo.qrImage}`}
+                alt="QR Code Preview"
+                width={300}
+                height={300}
+                className="rounded shadow"
+              />
+            </div>
+
             <button
-              className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded w-full"
-              onClick={() => setIsQRPreviewOpen(false)}
+              onClick={handleDownloadQR}
+              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded w-full transition"
             >
+              <Download className="w-5 h-5" />
+              ดาวน์โหลด QR Code
+            </button>
+
+            <button
+              onClick={handleCopyQR}
+              className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 px-4 rounded w-full transition"
+            >
+              <ClipboardCopy className="w-5 h-5" />
+              คัดลอก QR Code
+            </button>
+
+            <button
+              onClick={() => setIsQRPreviewOpen(false)}
+              className="flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded w-full transition"
+            >
+              <XCircle className="w-5 h-5" />
               ปิด
             </button>
           </div>
@@ -921,7 +1050,3 @@ export function CheckoutForm() {
     </div>
   );
 }
-function setIsSaving(arg0: boolean) {
-  throw new Error("Function not implemented.");
-}
-

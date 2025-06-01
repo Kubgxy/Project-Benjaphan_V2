@@ -197,6 +197,7 @@ export function WishlistContent() {
                                       : "outline"
                                   }
                                   size="sm"
+                                  disabled={s.quantity === 0}
                                   onClick={() => handleSelectSize(product.id_product, s.size)}
                                 >
                                   {s.size} (เหลือ {s.quantity})
@@ -297,6 +298,7 @@ export function WishlistContent() {
                                   ? "default"
                                   : "outline"
                               }
+                              disabled={s.quantity === 0}
                               onClick={() => handleSelectSize(product.id_product, s.size)}
                             >
                               {s.size} (เหลือ {s.quantity})

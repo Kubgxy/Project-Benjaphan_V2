@@ -263,15 +263,23 @@ export function Header() {
                 >
                   สินค้าที่ชอบ
                 </Link>
-                <Link
-                  href="/auth"
-                  className="mobile-link"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {isAuthenticated
-                    ? "บัญชีของฉัน"
-                    : "เข้าสู่ระบบ / สมัครสมาชิก"}
-                </Link>
+                {!isAuthenticated ? (
+                  <Link
+                    href="/auth"
+                    className="mobile-link"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    เข้าสู่ระบบ
+                  </Link>
+                ) : (
+                  <Link
+                    href="/cart"
+                    className="mobile-link"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    ตะกร้าสินค้า
+                  </Link>
+                )}
               </nav>
             </div>
           )}

@@ -55,20 +55,16 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     try {
       const role = await login(email, password);
   
-      if (!role) {
+      if (!role ) {
         showError("เข้าสู่ระบบไม่สําเร็จ!");
         return;
       }
-  
       toast({
         title: "เข้าสู่ระบบสำเร็จ",
         description: "ยินดีต้อนรับกลับมา!",
         variant: "default",
       });
-
       window.location.href = "/";
-
-      showError("กรุณาลองอีกครั้ง!");
     } finally {
       setIsLoading(false);
     }

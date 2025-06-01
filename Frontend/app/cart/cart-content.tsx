@@ -224,14 +224,14 @@ export function CartContent() {
                 >
                   <CustomCheckbox
                     checked={
-                        selectedItems[`${item.productId}-${item.size}`] || false
-                      }
-                      onChange={(e) =>
-                        setSelectedItems({
-                          ...selectedItems,
-                          [`${item.productId}-${item.size}`]: e.target.checked,
-                        })
-                      }
+                      selectedItems[`${item.productId}-${item.size}`] || false
+                    }
+                    onChange={(e) =>
+                      setSelectedItems({
+                        ...selectedItems,
+                        [`${item.productId}-${item.size}`]: e.target.checked,
+                      })
+                    }
                     label=""
                     className="mt-1"
                   />
@@ -256,7 +256,9 @@ export function CartContent() {
                     <span>ราคา: {item.priceAtAdded} บาท</span>
                     {/* เลือกขนาด (เฉพาะ mobile) */}
                     <div className="items-center py-2 gap-2 mt-2">
-                      <label className="flex text-xs text-gray-600">ขนาด :</label>
+                      <label className="flex text-xs text-gray-600">
+                        ขนาด :
+                      </label>
                       <select
                         value={item.size}
                         onChange={async (e) => {
@@ -292,14 +294,16 @@ export function CartContent() {
                         className="mt-1 w-full border rounded px-2 py-1 text-sm text-gray-700"
                       >
                         {item.availableSizes?.map((s) => (
-                          <option key={s.size} value={s.size}>
+                          <option
+                            key={s.size}
+                            value={s.size}
+                            disabled={s.quantity === 0}
+                          >
                             {s.size} (เหลือ {s.quantity})
                           </option>
                         ))}
                       </select>
-                      
                     </div>
-
 
                     {/* ปุ่มจำนวน */}
                     <div className="flex items-center mb-2">
@@ -337,7 +341,8 @@ export function CartContent() {
                     </div>
 
                     <span className="font-medium ">
-                      รวมทั้งสิ้น : {formatPrice(item.priceAtAdded * item.quantity)}
+                      รวมทั้งสิ้น :{" "}
+                      {formatPrice(item.priceAtAdded * item.quantity)}
                     </span>
                   </div>
 
@@ -360,22 +365,22 @@ export function CartContent() {
                       <th className="text-left pb-4">
                         <CustomCheckbox
                           checked={
-                              cartItems.length > 0 &&
-                              cartItems.every(
-                                (item) =>
-                                  selectedItems[`${item.productId}-${item.size}`]
-                              )
+                            cartItems.length > 0 &&
+                            cartItems.every(
+                              (item) =>
+                                selectedItems[`${item.productId}-${item.size}`]
+                            )
+                          }
+                          onChange={(e) => {
+                            const newSelected: { [key: string]: boolean } = {};
+                            if (e.target.checked) {
+                              cartItems.forEach((item) => {
+                                newSelected[`${item.productId}-${item.size}`] =
+                                  true;
+                              });
                             }
-                            onChange={(e) => {
-                              const newSelected: { [key: string]: boolean } = {};
-                              if (e.target.checked) {
-                                cartItems.forEach((item) => {
-                                  newSelected[`${item.productId}-${item.size}`] =
-                                    true;
-                                });
-                              }
-                              setSelectedItems(newSelected);
-                            }}
+                            setSelectedItems(newSelected);
+                          }}
                           label=""
                           className="mr-2"
                         />
@@ -472,7 +477,11 @@ export function CartContent() {
                             className="border rounded px-2 py-1 text-sm text-gray-700"
                           >
                             {item.availableSizes?.map((s) => (
-                              <option key={s.size} value={s.size}>
+                              <option
+                                key={s.size}
+                                value={s.size}
+                                disabled={s.quantity === 0}
+                              >
                                 {s.size} (เหลือ {s.quantity})
                               </option>
                             ))}

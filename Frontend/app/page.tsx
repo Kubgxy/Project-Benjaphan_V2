@@ -154,11 +154,7 @@ export default function Home() {
       <section className="relative w-full min-h-[60vh] sm:min-h-[70vh] md:min-h-[90vh] flex items-center">
         <div className="absolute inset-0 z-0">
           <Image
-            src={
-              bannerContent?.bannerImage
-                ? `${getBaseUrl()}/${bannerContent.bannerImage}`
-                : "/bg/ChatGPT Image 30 เม.ย. 2568 05_00_23.png"
-            }
+            src={`${getBaseUrl()}/${bannerContent?.bannerImage}`}
             alt="หน้าแรก"
             fill
             className="object-cover object-center sm:object-top"

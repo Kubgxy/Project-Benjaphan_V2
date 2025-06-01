@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 import { useToast } from "@/components/ui/use-toast"
 import { getBaseUrl } from "@/lib/api";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 export interface User {
   id: string
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
+  const router = useRouter()
 
   // Check if user is already logged in
   useEffect(() => {
@@ -71,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
+      router.push("/auth");
     }
   };
   

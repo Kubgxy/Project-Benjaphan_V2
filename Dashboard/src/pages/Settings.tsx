@@ -150,6 +150,19 @@ const Settings = () => {
     },
   });
 
+  const formatAccountNumber = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 10); // เอาเฉพาะเลข 0-9 สูงสุด 10 ตัว
+
+    // ใส่ขีดแบบ 3-3-4 → 123-456-7890
+    const part1 = digitsOnly.slice(0, 3);
+    const part2 = digitsOnly.slice(3, 6);
+    const part3 = digitsOnly.slice(6, 10);
+
+    if (digitsOnly.length > 6) return `${part1}-${part2}-${part3}`;
+    if (digitsOnly.length > 3) return `${part1}-${part2}`;
+    return part1;
+  };
+
   useEffect(() => {
     axios
       .get(`${getBaseUrl()}/api/setting/getHomepage`, { withCredentials: true })
@@ -481,8 +494,11 @@ const Settings = () => {
                 <Label>Account Number</Label>
                 <Input
                   value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
+                  onChange={(e) =>
+                    setAccountNumber(formatAccountNumber(e.target.value))
+                  }
                   placeholder="เช่น 123-456-7890"
+                  inputMode="numeric"
                 />
               </div>
 
