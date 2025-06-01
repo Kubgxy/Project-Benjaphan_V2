@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, MailCheck, MailX, Mail, Trash2, Eye } from "lucide-react";
+import {
+  MessageSquare,
+  MailCheck,
+  MailX,
+  Mail,
+  Trash2,
+  Eye,
+} from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -42,6 +49,8 @@ import Swal from "sweetalert2"; // ✅ ใช้ SweetAlert2 Toast
 import { getBaseUrl } from "@/lib/api";
 import { th } from "date-fns/locale/th";
 
+import { DateRange } from "react-day-picker";
+
 const Messages = () => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,18 +68,31 @@ const Messages = () => {
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
   const unreadCount = messages.filter((msg) => !msg.isRead).length;
 
-  const filteredMessages = messages.filter(
-    (message) =>
-      (readFilter === "all" ||
-        (readFilter === "read" && message.isRead) ||
-        (readFilter === "unread" && !message.isRead)) &&
-      (message.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        message.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        message.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        message.message.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredMessages = messages.filter((message) => {
+    const matchStatus =
+      readFilter === "all" ||
+      (readFilter === "read" && message.isRead) ||
+      (readFilter === "unread" && !message.isRead);
+
+    const matchSearch =
+      message.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      message.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      message.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      message.message.toLowerCase().includes(searchQuery.toLowerCase());
+
+const matchDate =
+  !dateRange?.from ||
+  !dateRange?.to ||
+  (new Date(message.createdAt) >= dateRange.from &&
+   new Date(message.createdAt) <= dateRange.to);
+
+
+    return matchStatus && matchSearch && matchDate;
+  });
 
   const sortedMessages = [...filteredMessages].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -199,7 +221,7 @@ const Messages = () => {
           <CardHeader className="pb-2 flex justify-between items-center">
             <div>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <MessageSquare size={16} /> 
+                <MessageSquare size={16} />
               </CardTitle>
               <CardDescription>รวมข้อความทั้งหมด</CardDescription>
             </div>
@@ -211,7 +233,7 @@ const Messages = () => {
           <CardHeader className="pb-2 flex justify-between items-center">
             <div>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <MailX size={16} /> 
+                <MailX size={16} />
               </CardTitle>
               <CardDescription>ยังไม่ได้อ่าน</CardDescription>
             </div>
@@ -225,7 +247,7 @@ const Messages = () => {
           <CardHeader className="pb-2 flex justify-between items-center">
             <div>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <MailCheck size={16} /> 
+                <MailCheck size={16} />
               </CardTitle>
               <CardDescription>อ่านแล้ว</CardDescription>
             </div>
@@ -265,7 +287,11 @@ const Messages = () => {
             </SelectContent>
           </Select>
         </div>
-        <DatePickerWithRange className="w-full md:w-auto" />
+        <DatePickerWithRange
+          className="w-full md:w-auto"
+          value={dateRange}
+          onChange={setDateRange}
+        />
       </div>
 
       {/* ✅ Table */}
@@ -279,9 +305,7 @@ const Messages = () => {
               <TableHead className="font-semibold">ผู้ส่ง</TableHead>
               <TableHead className="font-semibold">หัวข้อ</TableHead>
               <TableHead className="font-semibold">วันที่ส่ง</TableHead>
-              <TableHead className="font-semibold text-right">
-                จัดการ
-              </TableHead>
+              <TableHead className="font-semibold text-right">จัดการ</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -371,9 +395,7 @@ const Messages = () => {
                     size={40}
                     className="text-muted-foreground mb-2 mx-auto"
                   />
-                  <p className="text-sm text-muted-foreground">
-                    ไม่พบข้อมูล
-                  </p>
+                  <p className="text-sm text-muted-foreground">ไม่พบข้อมูล</p>
                 </TableCell>
               </TableRow>
             )}
@@ -476,8 +498,10 @@ const Messages = () => {
                   <span>
                     {format(
                       new Date(selectedMessage.createdAt),
-                      "d MMM yyyy HH:mm:ss", {
-                        locale: th,}
+                      "d MMM yyyy HH:mm:ss",
+                      {
+                        locale: th,
+                      }
                     )}
                   </span>
                 </div>
@@ -500,8 +524,9 @@ const Messages = () => {
                 เรื่อง : {selectedMessage.subject}
               </h4>
               <div className="border rounded-lg bg-gray-50 p-4 max-h-[400px] overflow-y-auto">
-                <blockquote className="whitespace-pre-line text-sm text-gray-700">
-                  รายละเอียด : {selectedMessage.message}
+                รายละเอียด :
+                <blockquote className="text-sm text-gray-700 break-words">
+                  {selectedMessage.message}
                 </blockquote>
               </div>
             </div>

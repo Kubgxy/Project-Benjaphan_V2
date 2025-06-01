@@ -17,23 +17,14 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Member {
   _id: string;
@@ -58,7 +49,8 @@ export default function MembersPage() {
 
   const filtered = members
     .filter((m) => {
-      const fullName = `${m.userId.firstName} ${m.userId.lastName}`.toLowerCase();
+      const fullName =
+        `${m.userId.firstName} ${m.userId.lastName}`.toLowerCase();
       return (
         fullName.includes(searchTerm.toLowerCase()) ||
         m.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -81,9 +73,12 @@ export default function MembersPage() {
     const fetchMembers = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`${getBaseUrl()}/api/user/getAllNewsletterMembers`, {
-          withCredentials: true,
-        });
+        const res = await axios.get(
+          `${getBaseUrl()}/api/user/getAllNewsletterMembers`,
+          {
+            withCredentials: true,
+          }
+        );
         setMembers(res.data.members || []);
       } catch (err) {
         toast({ title: "โหลดข้อมูลล้มเหลว", variant: "destructive" });
@@ -95,10 +90,47 @@ export default function MembersPage() {
   }, []);
 
   const handleExport = () => {
-    toast({ title: "Export Started", description: "Exporting to CSV..." });
-    setTimeout(() => {
-      toast({ title: "Export Complete", description: "Download ready!" });
-    }, 1500);
+    if (filtered.length === 0) {
+      toast({
+        title: "ไม่มีข้อมูล",
+        description: "ไม่พบสมาชิกที่สามารถ export ได้",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const headers = ["ID", "ชื่อ", "นามสกุล", "อีเมล", "วันที่สมัคร", "สถานะ"];
+    const rows = filtered.map((m) => [
+      m._id,
+      m.userId.firstName,
+      m.userId.lastName,
+      m.email,
+      format(new Date(m.subscribedAt), "yyyy-MM-dd"),
+      "Subscribed",
+    ]);
+
+    const csvRows = [
+      headers.join(","),
+      ...rows.map((r) => r.map((cell) => `"${cell}"`).join(",")),
+    ];
+
+    // 👉 เพิ่ม BOM เพื่อให้ Excel แสดงภาษาไทยถูก
+    const csvContent = "\uFEFF" + csvRows.join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "Members.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "✅ Export สำเร็จ",
+      description: "ไฟล์ CSV ถูกดาวน์โหลดแล้ว",
+    });
   };
 
   return (
@@ -147,11 +179,21 @@ export default function MembersPage() {
                   .fill(null)
                   .map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-40" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
                     </TableRow>
                   ))
               ) : filtered.length > 0 ? (
@@ -160,7 +202,11 @@ export default function MembersPage() {
                     <TableCell className="flex items-center gap-3">
                       <Avatar>
                         <AvatarImage
-                          src={m.userId.avatar ? `${getBaseUrl()}${m.userId.avatar}` : "/placeholder.jpg"}
+                          src={
+                            m.userId.avatar
+                              ? `${getBaseUrl()}${m.userId.avatar}`
+                              : "/placeholder.jpg"
+                          }
                           alt={m.userId.firstName}
                           className="object-cover w-16 h-16"
                         />
@@ -170,15 +216,22 @@ export default function MembersPage() {
                         <div className="font-medium">
                           {m.userId.firstName} {m.userId.lastName}
                         </div>
-                        <div className="text-xs text-muted-foreground">ID: {m._id}</div>
+                        <div className="text-xs text-muted-foreground">
+                          ID: {m._id}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>{m.email}</TableCell>
                     <TableCell>
-                      {format(new Date(m.subscribedAt), "d MMM yyyy", { locale: th })}
+                      {format(new Date(m.subscribedAt), "d MMM yyyy", {
+                        locale: th,
+                      })}
                     </TableCell>
                     <TableCell>
-                      <Badge className="text-green-600 border-green-400" variant="outline">
+                      <Badge
+                        className="text-green-600 border-green-400"
+                        variant="outline"
+                      >
                         Subscribed
                       </Badge>
                     </TableCell>
@@ -232,17 +285,26 @@ export default function MembersPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="mt-3 font-bold text-lg">
-                  {selectedMember.userId.firstName} {selectedMember.userId.lastName}
+                  {selectedMember.userId.firstName}{" "}
+                  {selectedMember.userId.lastName}
                 </div>
-                <div className="text-muted-foreground">{selectedMember.email}</div>
+                <div className="text-muted-foreground">
+                  {selectedMember.email}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p><strong>Role:</strong> {selectedMember.userId.role}</p>
+                  <p>
+                    <strong>Role:</strong> {selectedMember.userId.role}
+                  </p>
                   <p>
                     <strong>สมัครเมื่อ:</strong>{" "}
-                    {format(new Date(selectedMember.subscribedAt), "d MMM yyyy", { locale: th })}
+                    {format(
+                      new Date(selectedMember.subscribedAt),
+                      "d MMM yyyy",
+                      { locale: th }
+                    )}
                   </p>
                 </div>
               </div>

@@ -7,7 +7,7 @@ const pageSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      enum: ["homepage", "auspiciouspage", "aboutpage", "contactpage"],
+      enum: ["homepage", "auspiciouspage", "aboutpage", "contactpage", "checkoutpage"],
     },
     fields: {
       type: mongoose.Schema.Types.Mixed, // ยืดหยุ่นเก็บ object ได้
