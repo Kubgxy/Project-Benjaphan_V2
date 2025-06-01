@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation";
 import { SearchPopover } from "@/components/search-popover";
 import { Product, SearchItem } from "@/lib/types"; // Import the correct type for Product
 import { getBaseUrl } from "@/lib/api";
+import { LoginForm } from "@/components/login-form";
+import { RegisterForm } from "@/components/register-form";
 
 export function Header() {
   const { itemCount } = useCart();
@@ -70,12 +72,10 @@ export function Header() {
     description: p.description,
     image: p.images?.[0] ? `${BACKEND_URL}${p.images[0]}` : "/placeholder.svg",
   }));
-  
 
   return (
-    
     <>
-      <div className="bg-gold-600 text-white py-2  text-center text-sm font-medium">
+      <div className="bg-gold-600 text-white py-2 text-center text-sm font-medium">
         <div className="container mx-auto px-4">
           <p>
             สวัสดีลูกค้าทุกท่าน ยินดีต้อนรับสู่เว็บไซต์เบญจภัณฑ์ ๕ 
@@ -159,13 +159,23 @@ export function Header() {
                   <span className="badge">{wishlistCount}</span>
                 )}
               </Link>
-              <Link
-                href="/account"
-                className="icon-btn"
-                aria-label="บัญชีของฉัน"
-              >
-                <User className="h-5 w-5 sm:h-6 sm:w-6" />
-              </Link>
+              {!isAuthenticated ? (
+                <Link
+                  href="/auth"
+                  className="icon-btn"
+                  aria-label="ล็อกอิน"
+                >
+                  <User className="h-5 w-5 sm:h-6 sm:w-6" />
+                </Link>
+              ) : (
+                <Link
+                  href="/account"
+                  className="icon-btn"
+                  aria-label="บัญชีของฉัน"
+                >
+                  <User className="h-5 w-5 sm:h-6 sm:w-6" />
+                </Link>
+              )}
               <Link
                 href="/cart"
                 className="relative icon-btn"
@@ -174,6 +184,16 @@ export function Header() {
                 <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />
                 {itemCount > 0 && <span className="badge">{itemCount}</span>}
               </Link>
+              
+              {/* Login Button */}
+              {!isAuthenticated && (
+                <Link
+                  href="/auth"
+                  className="hidden md:inline-block bg-gold-600 text-white px-4 py-2 rounded-md hover:bg-gold-700 transition duration-300 text-sm"
+                >
+                  เข้าสู่ระบบ
+                </Link>
+              )}
 
               {/* Mobile Menu Button */}
               <button
@@ -244,7 +264,7 @@ export function Header() {
                   สินค้าที่ชอบ
                 </Link>
                 <Link
-                  href="/account"
+                  href="/auth"
                   className="mobile-link"
                   onClick={() => setMobileMenuOpen(false)}
                 >

@@ -4,14 +4,14 @@ export function getBaseUrl() {
     return ""; // ใช้ path สั้นเช่น /api/... ผ่าน NGINX ได้เลย
   } else {
     // 👉 ฝั่ง SSR หรือ Node
-    return process.env.NEXT_PUBLIC_BACKEND_URL || "http://backend:3000";
+    return "http://backend:3000";
   }
 }
 
 
 // export function getBaseUrl() {
 //   if (process.env.NODE_ENV === "development") {
-//     return process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
+//     return "http://localhost:3000";
 //   }
 //   return ""; // ใช้ path สั้น ๆ ใน Production ที่มี NGINX reverse proxy แล้ว
 // }

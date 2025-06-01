@@ -11,7 +11,11 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa";
 import { getBaseUrl } from "@/lib/api";
 
-export function LoginForm() {
+interface LoginFormProps {
+  onSuccess: () => void;
+}
+
+export function LoginForm({ onSuccess }: LoginFormProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -62,14 +66,14 @@ export function LoginForm() {
         variant: "default",
       });
 
-    } catch (err) {
+      window.location.href = "/";
+
       showError("กรุณาลองอีกครั้ง!");
     } finally {
       setIsLoading(false);
     }
   };
   
-
   return (
     <form onSubmit={handleSubmit}>
       <div className="mb-4">

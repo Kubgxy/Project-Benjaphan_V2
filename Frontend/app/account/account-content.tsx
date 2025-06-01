@@ -18,7 +18,7 @@ import {
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import { LoginForm } from "../../components/login-form";
-import { RegisterForm } from "./register-form";
+import { RegisterForm } from "../../components/register-form";
 import { ProfileForm } from "./profile-form";
 import Swal from "sweetalert2";
 import { useToast } from "@/components/ui/use-toast";
@@ -421,46 +421,7 @@ export function AccountContent() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="p-6">
-            <div className="flex border-b border-gray-200">
-              <button
-                className={`px-4 py-2 font-medium ${
-                  showLoginForm
-                    ? "text-gold-600 border-b-2 border-gold-600"
-                    : "text-gray-500"
-                }`}
-                onClick={() => setShowLoginForm(true)}
-              >
-                เข้าสู่ระบบ
-              </button>
-              <button
-                className={`px-4 py-2 font-medium ${
-                  !showLoginForm
-                    ? "text-gold-600 border-b-2 border-gold-600"
-                    : "text-gray-500"
-                }`}
-                onClick={() => setShowLoginForm(false)}
-              >
-                สมัครสมาชิก
-              </button>
-            </div>
-            <div className="mt-6">
-              {showLoginForm ? (
-                <LoginForm />
-              ) : (
-                <RegisterForm onSuccess={() => setShowLoginForm(true)} />
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  
   return (
     <div className="container mx-auto max-w-6xl px-4 py-12">
       <h1 className="text-2xl sm:text-3xl font-display font-semibold text-brown-800 mb-6 text-center sm:text-left">

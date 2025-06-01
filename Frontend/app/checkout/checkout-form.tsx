@@ -37,6 +37,7 @@ export function CheckoutForm() {
   const router = useRouter();
   const suggestRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaveing, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkoutItems, setCheckoutItems] = useState<any[]>([]);
   const [subtotal, setSubtotal] = useState(0);
@@ -105,32 +106,36 @@ export function CheckoutForm() {
       const res = await axios.get(`${getBaseUrl()}/api/user/getAddress`, {
         withCredentials: true,
       });
-
       const addresses: any[] = res.data.addresses || [];
       setAddressList(addresses);
 
-      // ✅ หา address ที่ match กับ preferredId
-      let selected = addresses[0];
+      // หากมี preferredId และพบที่อยู่ที่ตรงกัน
       if (preferredId) {
         const matched = addresses.find((a) => a._id?.toString() === preferredId);
-        if (matched) selected = matched;
+        if (matched) {
+          setSelectedAddressId(matched._id?.toString() || null);
+          setShippingInfo({
+            _id: matched._id?.toString() || "",
+            Name: matched.Name,
+            label: matched.label,
+            addressLine: matched.addressLine,
+            subdistrict: matched.subdistrict,
+            district: matched.district,
+            province: matched.province,
+            postalCode: matched.postalCode,
+            country: matched.country,
+            phone: matched.phone,
+          });
+          return;
+        }
       }
 
-      if (selected) {
-        setSelectedAddressId(selected._id?.toString() || null);
-        setShippingInfo({
-          _id: selected._id?.toString() || "",
-          Name: selected.Name,
-          label: selected.label,
-          addressLine: selected.addressLine,
-          subdistrict: selected.subdistrict,
-          district: selected.district,
-          province: selected.province,
-          postalCode: selected.postalCode,
-          country: selected.country,
-          phone: selected.phone,
-        });
+      // หากไม่มี addresses
+      if (addresses.length === 0) {
+        setSelectedAddressId(null);
+        setShippingInfo(defaultShippingInfo);
       }
+      // ไม่ตั้งค่า default ถ้ามี selectedAddressId อยู่แล้ว
     } catch (error: any) {
       if (error.response?.status === 401) return;
       console.error("❌ Failed to load addresses:", error);
@@ -172,41 +177,72 @@ export function CheckoutForm() {
 
   const handleSaveShipping = async () => {
     try {
+      setIsSaving(true);
+      if (!shippingInfo.Name || !shippingInfo.addressLine || !shippingInfo.phone || !shippingInfo.subdistrict) {
+        toast({
+          title: "❌ กรุณากรอกข้อมูลให้ครบถ้วน",
+          description: "ชื่อผู้รับ, ที่อยู่, เบอร์โทร, และแขวง/ตำบล จำเป็นต้องระบุ",
+          duration: 3000,
+        });
+        return;
+      }
+
       let res;
 
       if (selectedAddressId) {
-        // แก้ไข
         res = await axios.patch(
           `${getBaseUrl()}/api/user/updateAddress/${selectedAddressId}`,
           shippingInfo,
           { withCredentials: true }
         );
         toast({ title: "✅ แก้ไขที่อยู่เรียบร้อยแล้ว", duration: 3000 });
-
-        // แค่ reload ด้วย id เดิม
-        fetchAddressList(selectedAddressId);
+        setShippingInfo({ ...shippingInfo, _id: selectedAddressId });
       } else {
-        // เพิ่มใหม่
         res = await axios.post(
           `${getBaseUrl()}/api/user/addAddress`,
           shippingInfo,
           { withCredentials: true }
         );
-        toast({ title: "✅ เพิ่มที่อยู่เรียบร้อยแล้ว", duration: 3000 });
-
-        const newId = res.data?.address?._id;
-        if (newId) {
-          fetchAddressList(newId); // ❗ ปล่อยให้ function นี้จัดการทั้ง selected + shippingInfo
+        const newAddresses = res.data.addresses; // ใช้ addresses แทน address
+        if (newAddresses && newAddresses.length > 0) {
+          const newAddress = newAddresses[newAddresses.length - 1]; // เลือกที่อยู่ล่าสุด
+          setSelectedAddressId(newAddress._id); // ตั้งค่า selectedAddressId
+          setShippingInfo({
+            _id: newAddress._id,
+            Name: newAddress.Name,
+            label: newAddress.label,
+            addressLine: newAddress.addressLine,
+            subdistrict: newAddress.subdistrict,
+            district: newAddress.district,
+            province: newAddress.province,
+            postalCode: newAddress.postalCode,
+            country: newAddress.country,
+            phone: newAddress.phone,
+          });
+          toast({ title: "✅ เพิ่มที่อยู่เรียบร้อยแล้ว", duration: 3000 });
           modalRef.current?.close();
         } else {
-          fetchAddressList(); // fallback
+          toast({
+            title: "⚠️ เพิ่มที่อยู่สำเร็จ แต่ระบบอาจไม่ได้รับข้อมูล",
+            description: "กรุณาเลือกที่อยู่ใหม่จากรายการ",
+            duration: 3000,
+          });
+          await fetchAddressList();
           modalRef.current?.close();
+          setShowAddressModal(true);
         }
       }
 
-      modalRef.current?.close();
-    } catch {
-      toast({ title: "❌ เกิดข้อผิดพลาด", description: "ไม่สามารถบันทึกที่อยู่ได้", duration: 3000 });
+      await fetchAddressList();
+    } catch (error) {
+      console.error("❌ เกิดข้อผิดพลาดในการบันทึกที่อยู่:", error);
+      toast({
+        title: "❌ เกิดข้อผิดพลาด",
+        description: "ไม่สามารถบันทึกที่อยู่ได้",
+        duration: 3000,
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -707,3 +743,7 @@ export function CheckoutForm() {
     </div>
   );
 }
+function setIsSaving(arg0: boolean) {
+  throw new Error("Function not implemented.");
+}
+
