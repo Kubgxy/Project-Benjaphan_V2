@@ -42,7 +42,7 @@ export default function LoginPage() {
               </div>
             </div>
           </a>
-          <a href="#" className="text-gray-800 hover:underline">
+          <a href="/faq" className="text-gray-800 hover:underline">
             ต้องการความช่วยเหลือ?
           </a>
         </div>
