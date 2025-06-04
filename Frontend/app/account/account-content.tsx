@@ -518,6 +518,19 @@ export function AccountContent() {
                 <div>
                   <h2 className="text-xl font-medium mb-6">ข้อมูลส่วนตัว</h2>
                   <ProfileForm />
+                  <div className="mt-10 p-4 border border-red-300 bg-red-50 rounded-md text-sm text-red-700">
+      <p className="font-semibold mb-1">ลบบัญชีผู้ใช้</p>
+      <p>
+        หากคุณต้องการลบบัญชีและข้อมูลทั้งหมด กรุณาติดต่อเราผ่านหน้า{" "}
+        <a
+          href="/contact"
+          className="underline text-red-600 hover:text-red-800 font-medium"
+        >
+          ติดต่อเรา
+        </a>{" "}
+        โดยระบุหัวข้อว่า “ขอลบบัญชี” และแจ้งอีเมลที่ลงทะเบียนไว้ ทีมงานจะดำเนินการลบข้อมูลภายใน 7 วันทำการ
+      </p>
+    </div>
                 </div>
               )}
               {activeTab === "orders" && (

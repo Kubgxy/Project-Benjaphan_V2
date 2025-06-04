@@ -147,7 +147,7 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
 
 export const startFacebookOAuth = (req: Request, res: Response) => {
   const clientId = process.env.FACEBOOK_CLIENT_ID!;
-  const redirectUri = encodeURIComponent('http://localhost:3000/api/auth/social-login/facebook');
+  const redirectUri = encodeURIComponent('https://benjaphan5.com/api/auth/social-login/facebook');
   const scope = 'email public_profile';
 
   const authUrl = `https://www.facebook.com/v11.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&response_type=code`;
@@ -171,7 +171,7 @@ export const handleFacebookCallback = async (req: Request, res: Response) => {
         params: {
           client_id: process.env.FACEBOOK_CLIENT_ID,
           client_secret: process.env.FACEBOOK_CLIENT_SECRET,
-          redirect_uri: 'http://localhost:3000/api/auth/social-login/facebook',
+          redirect_uri: 'https://benjaphan5.com/api/auth/social-login/facebook',
           code,
         },
       }
@@ -222,7 +222,7 @@ export const handleFacebookCallback = async (req: Request, res: Response) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    res.redirect('http://localhost:5173');
+    res.redirect('https://benjaphan5.com');
   } catch (err) {
     console.error('❌ Facebook callback error:', err);
     res.status(500).json({ message: 'Facebook login failed' });
