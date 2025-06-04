@@ -220,6 +220,7 @@ export const handleFacebookCallback = async (req: Request, res: Response) => {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 24 * 60 * 60 * 1000,
+      domain: '.benjaphan5.com',
     });
 
     res.redirect('https://benjaphan5.com');
