@@ -55,7 +55,8 @@ export const socialLogin = async (req: Request, res: Response) => {
 };
 
 export const startGoogleOAuth = (req: Request, res: Response) => {
-  const redirectUri = 'http://localhost:3000/api/auth/social-login/google';
+  // const redirectUri = 'http://localhost:3000/api/auth/social-login/google';
+  const redirectUri = 'https://benjaphan5.com/api/auth/social-login/google';
   const clientId = process.env.GOOGLE_CLIENT_ID!;
   const scope = encodeURIComponent('openid email profile');
 
@@ -81,7 +82,7 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
         code,
         client_id: process.env.GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: 'http://localhost:3000/api/auth/social-login/google',
+        redirect_uri: 'https://benjaphan5.com/api/auth/social-login/google',
         grant_type: 'authorization_code',
       },
       { headers: { 'Content-Type': 'application/json' } }
@@ -133,10 +134,11 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 24 * 60 * 60 * 1000, // 1 วัน
+      domain: '.benjaphan5.com',
     });
 
     // ✅ 8. redirect กลับไป frontend
-    res.redirect('http://localhost:5173/');
+    res.redirect('https://benjaphan5.com/');
   } catch (error) {
     console.error('🔴 Google callback error:', error);
     res.status(500).json({ message: 'Login failed' });

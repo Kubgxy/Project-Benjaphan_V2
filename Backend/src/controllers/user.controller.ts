@@ -9,6 +9,8 @@ import User from "../Models_GPT/User";
 import Cart from "../Models_GPT/Cart";
 import Wishlist from "../Models_GPT/Wishlist";
 import Member from "../Models_GPT/Member";
+import { OtpToken } from "../Models_GPT/OtpToken";
+import { sendEmail } from "../utils/sendEmail"; // ✅ ปรับ path ให้ตรงกับโปรเจ็ค
 
 // Register
 export const registerUser = async (
@@ -211,7 +213,9 @@ export const updateMe = async (
 
     // ✅ ตรวจ phone format ก่อนเลย
     if (phoneNumber && !/^\d{9,10}$/.test(phoneNumber)) {
-      res.status(400).json({ message: "เบอร์โทรศัพท์ไม่ถูกต้อง (ต้องมี 9–10 หลัก)" });
+      res
+        .status(400)
+        .json({ message: "เบอร์โทรศัพท์ไม่ถูกต้อง (ต้องมี 9–10 หลัก)" });
       return;
     }
 
@@ -280,7 +284,6 @@ export const updateMe = async (
     res.status(500).json({ message: "เกิดข้อผิดพลาดในระบบ", error });
   }
 };
-
 
 //Get Address
 export const getAddress = async (
@@ -428,7 +431,9 @@ export const updateAddress = async (req: Request, res: Response) => {
 
     res.status(200).json({
       message: "✅ Address updated successfully",
-      updatedAddress: updatedUser.addresses.find((a) => a._id.toString() === addressId),
+      updatedAddress: updatedUser.addresses.find(
+        (a) => a._id.toString() === addressId
+      ),
       addresses: updatedUser.addresses,
     });
   } catch (error) {
@@ -530,5 +535,152 @@ export const getAllNewsletterMembers = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("ไม่สามารถดึงรายชื่อสมาชิกได้:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาด", error });
+  }
+};
+
+// 🎯 ขอ OTP
+export const requestReset = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(404).json({ status: "error", message: "User not found" });
+      return;
+    }
+
+    const fifteenMinsAgo  = new Date(Date.now() - 15 * 60 * 1000);
+    const otpRequests = await OtpToken.countDocuments({
+      email,
+      createdAt: { $gte: fifteenMinsAgo  },
+    });
+
+    if (otpRequests >= 5) {
+      res.status(429).json({
+        status: "error",
+        message: "ขอ OTP ได้ไม่เกิน 5 ครั้งต่อชั่วโมง",
+      });
+      return;
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const ref = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await OtpToken.create({
+      email,
+      otp,
+      ref,
+      expiresAt,
+      verified: false,
+      attempts: 0,
+      requestCount: otpRequests + 1,
+      lastRequestAt: new Date(),
+    });
+
+    await sendEmail(
+      email,
+      "รหัส OTP สำหรับรีเซ็ตรหัสผ่านระบบเบญจภัณฑ์",
+      `
+      <div style="font-family: Arial, sans-serif;">
+        <h2>📌 รหัส OTP ของคุณ</h2>
+        <p>ระบบเบญจภัณฑ์ได้รับคำขอรีเซ็ตรหัสผ่าน</p>
+        <p>กรุณาใช้รหัส OTP นี้:</p>
+        <div style="background:#f9f9f9;padding:16px;border-radius:8px">
+          <b>OTP:</b> ${otp}<br/>
+          <b>Ref:</b> ${ref}
+        </div>
+        <p>รหัสหมดอายุใน 10 นาที</p>
+      </div>
+      `
+    );
+
+    res.status(200).json({ status: "success", message: "OTP ส่งเรียบร้อย", ref, expiresAt });
+    return;
+  } catch (error) {
+    console.error("OTP Error:", error);
+    res.status(500).json({ status: "error", message: "ส่ง OTP ล้มเหลว" });
+    return 
+  }
+};
+
+// ✅ ยืนยัน OTP
+export const verifyOtp = async (req: Request, res: Response) => {
+  const { email, otp, ref } = req.body;
+
+  try {
+    const otpToken = await OtpToken.findOne({ email, ref, verified: false });
+    if (!otpToken) {
+      res.status(404).json({ status: "error", message: "ไม่พบ OTP หรือถูกใช้ไปแล้ว" });
+      return 
+    }
+
+    if (otpToken.attempts >= 5) {
+      res.status(400).json({ status: "error", message: "กรอก OTP เกิน 5 ครั้ง" });
+      return 
+    }
+
+    if (otpToken.expiresAt < new Date()) {
+      res.status(400).json({ status: "error", message: "OTP หมดอายุแล้ว" });
+      return 
+    }
+
+    if (otp !== otpToken.otp) {
+      await OtpToken.updateOne(
+        { email, ref, verified: false },
+        { $inc: { attempts: 1 } }
+      );
+       res.status(400).json({ status: "error", message: "OTP ไม่ถูกต้อง" });
+      return
+    }
+
+    await OtpToken.updateOne(
+      { _id: otpToken._id },
+      { $set: { verified: true } }
+    );
+    await OtpToken.deleteMany({
+      email,
+      verified: false,
+      _id: { $ne: otpToken._id },
+    });
+
+    res.status(200).json({ status: "success", message: "OTP ถูกต้อง" });
+    return 
+  } catch (error) {
+     res.status(500).json({ status: "error", message: "ยืนยัน OTP ล้มเหลว" });
+    return
+  }
+};
+
+// ✅ เปลี่ยนรหัสผ่านใหม่
+export const resetPassword = async (req: Request, res: Response) => {
+  const { email, newPassword, confirmPassword } = req.body;
+
+  if (!email || !newPassword || !confirmPassword) {
+    res.status(400).json({ status: "error", message: "ข้อมูลไม่ครบถ้วน" });
+    return 
+  }
+
+  if (newPassword !== confirmPassword) {
+    res.status(400).json({ status: "error", message: "ยืนยันรหัสผ่านไม่ตรงกัน" });
+    return 
+  }
+
+  try {
+    const otpVerified = await OtpToken.findOne({ email, verified: true });
+    if (!otpVerified) {
+      res.status(400).json({ status: "error", message: "OTP ยังไม่ถูกยืนยัน" });
+      return 
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await User.updateOne({ email }, { $set: { password: hashedPassword } });
+    await OtpToken.deleteMany({ email });
+
+     res.status(200).json({ status: "success", message: "รีเซ็ตรหัสผ่านสำเร็จ" });
+    return
+  } catch (error) {
+    res.status(500).json({ status: "error", message: "เปลี่ยนรหัสผ่านล้มเหลว" });
+    return 
   }
 };

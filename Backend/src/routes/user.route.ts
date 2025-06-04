@@ -10,6 +10,9 @@ import {
   getAllCustomers,
   subscribeNewsletter,
   getAllNewsletterMembers,
+  verifyOtp,
+  resetPassword,
+  requestReset,
 } from "../controllers/user.controller";
 import { updateMe, getUserProfile } from "../controllers/user.controller";
 import { verifyToken } from "../middlewares/verifyToken";
@@ -36,6 +39,10 @@ user.post("/addAddress", verifyToken, addAddress);
 user.patch("/updateAddress/:addressId", verifyToken, updateAddress);
 user.delete("/deleteAddress/:addressId", verifyToken, deleteAddress);
 user.post("/subscribeNewsletter", verifyToken, subscribeNewsletter);
+
+user.post("/requestReset", requestReset); // Request password reset
+user.post("/verifyOtp" , verifyOtp); // Verify OTP for password reset
+user.post("/resetPassword", resetPassword); // Reset password
 
 // Admin Route (เฉพาะ admin)
 user.get("/getAllCustomers", verifyToken, verifyAdmin, getAllCustomers); // Get all customers

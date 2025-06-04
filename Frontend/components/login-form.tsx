@@ -10,6 +10,7 @@ import { toast } from "@/components/ui/use-toast";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa";
 import { getBaseUrl } from "@/lib/api";
+import Link from "next/link";
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -113,11 +114,11 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             className="h-4 w-4 text-gold-600 focus:ring-gold-500 border-gray-300 rounded"
           />
           <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-            Remember me
+            จดจำฉัน
           </label>
-          <a href="#" className="ml-auto text-sm text-gold-600 hover:text-gold-700">
-            Forgot password?
-          </a>
+          <Link href="/forgot-password" className="ml-auto text-sm text-gold-600 hover:text-gold-700">
+            <span className="underline">ลืมรหัสผ่าน?</span>
+          </Link>
         </div>
       </div>
 
