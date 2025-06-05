@@ -27,7 +27,9 @@ pipeline {
           string(credentialsId: 'GOOGLE_CLIENT_ID', variable: 'GOOGLE_CLIENT_ID'),
           string(credentialsId: 'GOOGLE_CLIENT_SECRET', variable: 'GOOGLE_CLIENT_SECRET'),
           string(credentialsId: 'FACEBOOK_CLIENT_ID', variable: 'FACEBOOK_CLIENT_ID'),
-          string(credentialsId: 'FACEBOOK_CLIENT_SECRET', variable: 'FACEBOOK_CLIENT_SECRET')
+          string(credentialsId: 'FACEBOOK_CLIENT_SECRET', variable: 'FACEBOOK_CLIENT_SECRET'),
+          string(credentialsId: 'RESEND_API_KEY', variable: 'RESEND_API_KEY'),
+          string(credentialsId: 'EMAIL_FROM', variable: 'EMAIL_FROM') 
         ]) {
           sh '''
             echo "🔒 Writing secrets into Backend/.env"
@@ -38,6 +40,8 @@ pipeline {
             echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> Backend/.env
             echo "FACEBOOK_CLIENT_ID=$FACEBOOK_CLIENT_ID" >> Backend/.env
             echo "FACEBOOK_CLIENT_SECRET=$FACEBOOK_CLIENT_SECRET" >> Backend/.env
+            echo "RESEND_API_KEY=$RESEND_API_KEY" >> Backend/.env
+            echo "EMAIL_FROM=$EMAIL_FROM" >> Backend/.env 
           '''
         }
       }

@@ -4,9 +4,8 @@ import Image from "next/image";
 
 export default function AboutPage() {
   const teamMembers = [
-    { name: "คุณ", role: "ทีมงานผู้เชี่ยวชาญ", image: "/Pnhoona.jpg" },
     { name: "คุณเบญจพรรณ", role: "ผู้ก่อตั้งและผู้จัดการ", image: "/Pben.jpg" },
-    { name: "คุณ", role: "ทีมงานฝ่ายบริการลูกค้า", image: "/Pdream.jpg" },
+    { name: "คุณ", role: "ผู้ก่อตั้งและผู้จัดการ", image: "/Pdream.jpg" },
   ];
 
   const mobileFirstOrder = [teamMembers[1], teamMembers[0], teamMembers[2]];
@@ -175,7 +174,7 @@ export default function AboutPage() {
                   className={`relative ${
                     member.name === "คุณเบญจพรรณ"
                       ? "w-40 h-40 sm:w-60 sm:h-60"
-                      : "w-32 h-32 sm:w-40 sm:h-40"
+                      : "w-40 h-40 sm:w-60 sm:h-60"
                   } mx-auto mb-3 sm:mb-4 rounded-full overflow-hidden`}
                 >
                   <Image

@@ -351,6 +351,9 @@ export default function ForgotPasswordPage() {
 
               {/* Ref Code + Countdown */}
               <div className="text-center space-y-1">
+                <div className="text-sm text-red-700">
+                  เช็คอีเมลของคุณเพื่อรับรหัส OTP
+                </div>
                 <div className="text-sm text-gray-700">
                   Ref Code ของคุณ:{" "}
                   <span className="text-[#D4AF37] font-semibold">{ref}</span>
