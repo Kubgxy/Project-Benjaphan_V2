@@ -37,6 +37,8 @@ export const updateHomepageContent = async (req: Request, res: Response) => {
   try {
     const { bannerTitle, bannerSubtitle, bannerDescription } = req.body;
     const bannerImage = req.file?.path;
+    console.log("Received file path:", req.body);
+    console.log("Received file path:", bannerImage);
 
     // ✅ เตรียม object ของ fields ใหม่
     const newFields: any = {};
