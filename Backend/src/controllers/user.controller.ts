@@ -178,6 +178,7 @@ export const logoutUser = async (
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
+        domain: "benjaphan5.com",
       })
       .status(200)
       .json({ message: "✅ Logged out successfully" });
