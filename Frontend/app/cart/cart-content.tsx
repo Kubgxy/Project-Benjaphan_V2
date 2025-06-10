@@ -53,6 +53,9 @@ export function CartContent() {
   const shipping = selectedCartItems.length > 0 ? 50 : 0;
   const total = selectedCartItems.length > 0 ? subtotal + shipping : 0;
 
+  const [buttonLoading, setButtonLoading] = useState<{ [key: string]: boolean }>({});
+  const [sizeLoading, setSizeLoading] = useState<{ [key: string]: boolean }>({});
+
   const fetchCart = async () => {
     try {
       const response = await axios.get<CartResponse>(
@@ -62,12 +65,16 @@ export function CartContent() {
       setCartItems(response.data.cart.items);
       setIsLoggedIn(true);
 
-      // ✅ ตั้งค่า selectedItems ให้เลือกสินค้าทั้งหมดโดยอัตโนมัติ
-      const initialSelectedItems: { [key: string]: boolean } = {};
-      response.data.cart.items.forEach((item) => {
-        initialSelectedItems[`${item.productId}-${item.size}`] = true;
+      // ✅ เซ็ต selectedItems เฉพาะตอน selectedItems ยังว่าง (เช่น โหลดครั้งแรก)
+      setSelectedItems((prev) => {
+        // ถ้ามี selectedItems อยู่แล้ว ให้คงไว้
+        if (Object.keys(prev).length > 0) return prev;
+        const initialSelectedItems: { [key: string]: boolean } = {};
+        response.data.cart.items.forEach((item) => {
+          initialSelectedItems[`${item.productId}-${item.size}`] = true;
+        });
+        return initialSelectedItems;
       });
-      setSelectedItems(initialSelectedItems);
     } catch (error: any) {
       if (error.response?.status === 401) {
         return;
@@ -95,7 +102,7 @@ export function CartContent() {
         variant: "default",
         duration: 3000,
       });
-      fetchCart(); // รีเฟรช cart หลังจากลบ
+      await fetchCart(); // รีเฟรช cart หลังจากลบ
     } catch (error) {
       console.error("❌ Failed to remove item:", error);
     }
@@ -108,6 +115,9 @@ export function CartContent() {
   ) => {
     if (newQuantity < 1) return;
 
+    const key = `${productId}-${size}`;
+    setButtonLoading((prev) => ({ ...prev, [key]: true }));
+
     try {
       await axios.post(
         `${getBaseUrl()}/api/cart/updateCartItem`,
@@ -118,7 +128,7 @@ export function CartContent() {
         },
         { withCredentials: true }
       );
-      fetchCart(); // ✅ ดึงข้อมูลตะกร้าใหม่เพื่อ refresh
+      await fetchCart(); // ✅ ดึงข้อมูลตะกร้าใหม่เพื่อ refresh
     } catch (error) {
       console.error("Error updating quantity:", error);
       toast({
@@ -127,6 +137,8 @@ export function CartContent() {
         variant: "destructive",
         duration: 3000,
       });
+    } finally {
+      setButtonLoading((prev) => ({ ...prev, [key]: false }));
     }
   };
 
@@ -264,7 +276,8 @@ export function CartContent() {
                         onChange={async (e) => {
                           const newSize = e.target.value;
                           if (newSize === item.size) return;
-
+                          const key = `${item.productId}-${item.size}`;
+                          setSizeLoading((prev) => ({ ...prev, [key]: true }));
                           try {
                             await axios.post(
                               `${getBaseUrl()}/api/cart/changeItemSize`,
@@ -275,31 +288,32 @@ export function CartContent() {
                               },
                               { withCredentials: true }
                             );
-
                             toast({
                               title: "✅ เปลี่ยนขนาดสำเร็จ",
                               description: `ขนาดใหม่: ${newSize}`,
                               duration: 3000,
                             });
-
-                            fetchCart(); // โหลดตะกร้าใหม่
+                            await fetchCart(); // ต้อง await เพื่อให้ state sync
                           } catch (error) {
                             toast({
                               title: "❌ เปลี่ยนขนาดไม่สำเร็จ",
                               description: "กรุณาลองใหม่",
                               variant: "destructive",
                             });
+                          } finally {
+                            setSizeLoading((prev) => ({ ...prev, [key]: false }));
                           }
                         }}
-                        className="mt-1 w-full border rounded px-2 py-1 text-sm text-gray-700"
+                        disabled={sizeLoading[`${item.productId}-${item.size}`]}
+                        className="..."
                       >
-                        {item.availableSizes?.map((s) => (
+                        {item.availableSizes.map((sizeObj) => (
                           <option
-                            key={s.size}
-                            value={s.size}
-                            disabled={s.quantity === 0}
+                            key={sizeObj.size}
+                            value={sizeObj.size}
+                            disabled={sizeObj.quantity === 0}
                           >
-                            {s.size} (เหลือ {s.quantity})
+                            {sizeObj.size} {sizeObj.quantity === 0 ? "(หมด)" : `(เหลือ ${sizeObj.quantity})`}
                           </option>
                         ))}
                       </select>
@@ -316,7 +330,8 @@ export function CartContent() {
                             item.quantity - 1
                           )
                         }
-                        disabled={item.quantity <= 1}
+                        disabled={item.quantity <= 1 || buttonLoading[`${item.productId}-${item.size}`]
+                        }
                       >
                         <Minus className="w-4 h-4" />
                       </button>
@@ -334,6 +349,12 @@ export function CartContent() {
                             item.size,
                             item.quantity + 1
                           )
+                        }
+                        disabled={
+                          item.quantity >=
+                          (item.availableSizes.find(
+                            (s) => s.size === item.size
+                          )?.quantity || Infinity) || buttonLoading[`${item.productId}-${item.size}`]
                         }
                       >
                         <Plus className="w-4 h-4" />
@@ -402,7 +423,7 @@ export function CartContent() {
                             <CustomCheckbox
                               checked={
                                 selectedItems[
-                                  `${item.productId}-${item.size}`
+                                `${item.productId}-${item.size}`
                                 ] || false
                               }
                               onChange={(e) =>
@@ -445,8 +466,10 @@ export function CartContent() {
                             value={item.size}
                             onChange={async (e) => {
                               const newSize = e.target.value;
-
                               if (newSize === item.size) return;
+
+                              const key = `${item.productId}-${item.size}`;
+                              setSizeLoading((prev) => ({ ...prev, [key]: true }));
 
                               try {
                                 await axios.post(
@@ -458,31 +481,32 @@ export function CartContent() {
                                   },
                                   { withCredentials: true }
                                 );
-
                                 toast({
                                   title: "✅ เปลี่ยนขนาดสำเร็จ",
                                   description: `ขนาดใหม่: ${newSize}`,
                                   duration: 3000,
                                 });
-
-                                fetchCart(); // โหลดตะกร้าใหม่
+                                await fetchCart(); // ✅ ต้อง await เพื่อ sync state
                               } catch (error) {
                                 toast({
                                   title: "❌ เปลี่ยนขนาดไม่สำเร็จ",
                                   description: "กรุณาลองใหม่",
                                   variant: "destructive",
                                 });
+                              } finally {
+                                setSizeLoading((prev) => ({ ...prev, [key]: false }));
                               }
                             }}
+                            disabled={sizeLoading[`${item.productId}-${item.size}`]}
                             className="border rounded px-2 py-1 text-sm text-gray-700"
                           >
-                            {item.availableSizes?.map((s) => (
+                            {item.availableSizes.map((sizeObj) => (
                               <option
-                                key={s.size}
-                                value={s.size}
-                                disabled={s.quantity === 0}
+                                key={sizeObj.size}
+                                value={sizeObj.size}
+                                disabled={sizeObj.quantity === 0}
                               >
-                                {s.size} (เหลือ {s.quantity})
+                                {sizeObj.size} {sizeObj.quantity === 0 ? "(หมด)" : `(เหลือ ${sizeObj.quantity})`}
                               </option>
                             ))}
                           </select>
@@ -499,7 +523,8 @@ export function CartContent() {
                                   item.quantity - 1
                                 )
                               }
-                              disabled={item.quantity <= 1}
+                              disabled={item.quantity <= 1 || buttonLoading[`${item.productId}-${item.size}`]
+                              }
                             >
                               <Minus className="w-4 h-4" />
                             </button>
@@ -520,15 +545,14 @@ export function CartContent() {
                               }
                               disabled={
                                 item.quantity >=
-                                (item.availableSizes.find(
-                                  (s) => s.size === item.size
-                                )?.quantity || Infinity)
+                                (item.availableSizes.find((s) => s.size === item.size)?.quantity || Infinity)
+                                || buttonLoading[`${item.productId}-${item.size}`]
                               }
                               title={
                                 item.quantity >=
-                                (item.availableSizes.find(
-                                  (s) => s.size === item.size
-                                )?.quantity || Infinity)
+                                  (item.availableSizes.find(
+                                    (s) => s.size === item.size
+                                  )?.quantity || Infinity)
                                   ? "ไม่สามารถเพิ่มเกินจำนวนคงเหลือ"
                                   : ""
                               }

@@ -108,49 +108,6 @@ export const updateCartItem = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ Get cart For User
-export const getCartUser = async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.userId;
-
-  if (!userId) {
-    res.status(401).json({ message: "Unauthorized. Missing userId." });
-    console.log("👉 req.user:", req.user);
-    return 
-  }
-
-  try {
-    const cart = await Cart.findOne({ userId }).populate(
-      "items.productId",
-      "name images availableSizes"
-    );
-
-    if (!cart) {
-      res.status(200).json({ message: "Cart is empty", cart: { items: [] } });
-      return;
-    }
-
-    const mappedItems = cart.items
-      .filter((item) => item.productId) 
-      .map((item) => {
-        const product = item.productId as any;
-        return {
-          productId: product._id,
-          name: product.name,
-          images: product.images,
-          size: item.size,
-          quantity: item.quantity,
-          priceAtAdded: item.priceAtAdded,
-          availableSizes: product.availableSizes,
-        };
-      });
-
-    res.status(200).json({ cart: { items: mappedItems } });
-  } catch (error) {
-    console.error("❌ Error fetching cart:", error);
-    res.status(500).json({ message: "Server error", error });
-  }
-};
-
 // PATCH /api/cart/changeItemSize
 export const changeItemSize = async (req: Request, res: Response): Promise<void> => {
   const userId = req.user?.userId;
@@ -194,6 +151,51 @@ export const changeItemSize = async (req: Request, res: Response): Promise<void>
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+// ✅ Get cart For User
+export const getCartUser = async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    res.status(401).json({ message: "Unauthorized. Missing userId." });
+    console.log("👉 req.user:", req.user);
+    return 
+  }
+
+  try {
+    const cart = await Cart.findOne({ userId }).populate(
+      "items.productId",
+      "name images availableSizes"
+    );
+
+    if (!cart) {
+      res.status(200).json({ message: "Cart is empty", cart: { items: [] } });
+      return;
+    }
+
+    const mappedItems = cart.items
+      .filter((item) => item.productId) 
+      .map((item) => {
+        const product = item.productId as any;
+        return {
+          productId: product._id,
+          name: product.name,
+          images: product.images,
+          size: item.size,
+          quantity: item.quantity,
+          priceAtAdded: item.priceAtAdded,
+          availableSizes: product.availableSizes,
+        };
+      });
+
+    res.status(200).json({ cart: { items: mappedItems } });
+  } catch (error) {
+    console.error("❌ Error fetching cart:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+
 
 
 // ✅ Get all carts For Admin
