@@ -12,6 +12,9 @@ import Member from "../Models_GPT/Member";
 import { OtpToken } from "../Models_GPT/OtpToken";
 import { sendEmail } from "../utils/sendEmail"; // ✅ ปรับ path ให้ตรงกับโปรเจ็ค
 
+const cookieDomain =
+  process.env.NODE_ENV === "production" ? ".benjaphan5.com" : undefined;
+
 // Register
 export const registerUser = async (
   req: Request,
@@ -147,6 +150,7 @@ export const loginUser = async (
         secure: process.env.NODE_ENV === "production", // ใช้ secure เฉพาะ production (HTTPS)
         sameSite: "strict",
         maxAge: 24 * 60 * 60 * 1000, // 1 วัน
+        domain: cookieDomain,
       })
       .status(200)
       .json({
@@ -178,7 +182,7 @@ export const logoutUser = async (
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
-        domain: "benjaphan5.com",
+        domain: cookieDomain,
       })
       .status(200)
       .json({ message: "✅ Logged out successfully" });
